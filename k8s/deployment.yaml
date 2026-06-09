@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runtimeops-agent
+  namespace: default
+  labels:
+    app: runtimeops-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: runtimeops-agent
+  template:
+    metadata:
+      labels:
+        app: runtimeops-agent
+    spec:
+      containers:
+      - name: agent
+        image: runtimeops:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: rest
+          containerPort: 8000
+        - name: grpc
+          containerPort: 50052
+        envFrom:
+        - configMapRef:
+            name: runtimeops-agent-config
+        env:
+        # Secrets references
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: runtimeops-agent-secrets
+              key: postgres-password
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: runtimeops-agent-secrets
+              key: neo4j-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: runtimeops-agent-secrets
+              key: jwt-secret
+        - name: CACHE_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: runtimeops-agent-secrets
+              key: cache-encryption-key
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: runtimeops-agent-secrets
+              key: openai-api-key
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: runtimeops-agent-secrets
+              key: gemini-api-key
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10

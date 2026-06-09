@@ -1,541 +1,301 @@
-# **RuntimeOps**
+# RuntimeOps - Repository Intelligence Agent
 
-### **Autonomous Incident Intelligence for Modern Engineering Teams**
-
-RuntimeOps is a repository-aware AI engineering system that autonomously investigates production failures, reasons across real codebases, proposes remediations, and safely assists developers through controlled execution workflows powered by AI.
-
----
-
-# **Vision**
-
-Modern software systems are too complex for human-only operational workflows.
-
-Incidents today require engineers to:
-
-- navigate massive repositories
-- correlate logs with deployments
-- trace dependencies across services
-- understand architectural context
-- identify regressions
-- manually coordinate fixes
-
-RuntimeOps introduces an AI-native operational workflow where repository-aware agents collaborate to:
-
-- investigate failures
-- explain root causes
-- generate fixes
-- validate impact
-- assist remediation
-
-while maintaining developer oversight and execution safety.
+**Version:** 1.0.0  
+**Status:** Development  
+**Part of:** RuntimeOps Autonomous Incident Response Platform
 
 ---
 
-# **Problem**
+## Overview
 
-Engineering teams lose significant time during:
+The Repository Intelligence Agent is at the core of RuntimeOps. It provides repository-wide semantic understanding, dependency analysis, and architectural intelligence to enable autonomous incident response workflows.
 
-- production outages
-- CI/CD failures
-- regression debugging
-- dependency breakages
-- architecture drift
-- incident triage
+### Key Capabilities
 
-Current AI coding tools help generate snippets but fail to:
-
-- understand system-wide context
-- correlate operational failures with repository state
-- reason across files and services
-- safely execute engineering workflows
-
-Large engineering systems require:
-
-- repository-level reasoning
-- operational intelligence
-- controlled autonomous execution
-- human oversight for risky actions
+- **Semantic Code Search**: Natural-language queries over entire codebases
+- **Dependency Graph**: Service-to-service and file-to-file dependency tracing
+- **Architecture Mapping**: Auto-generated service boundary diagrams and call graphs
+- **Change Impact Analysis**: Predict affected services and tests from commit diffs
+- **Root Cause Context**: Supply structured code context to incident response agents
+- **Convention Extraction**: Detect patterns, naming standards, error handling norms
 
 ---
 
-# **Solution**
+## Quick Start
 
-RuntimeOps is a repository-aware AI incident analysis and remediation platform.
+### Prerequisites
 
-The platform:
+- Python 3.11+
+- Docker & Docker Compose
+- Poetry (for dependency management)
+- 8GB RAM minimum, 16GB recommended
 
-1. Ingests operational signals
-2. Understands the repository using IBM Bob
-3. Coordinates specialized engineering agents
-4. Identifies likely root causes
-5. Generates fixes and tests
-6. Evaluates remediation risk
-7. Assists developers through controlled workflows
+### Local Development Setup
 
----
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd RuntimeOps
+   ```
 
-# **Core Concept**
+2. **Copy environment configuration**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
 
-RuntimeOps treats software incidents as:
+3. **Start infrastructure services**
+   ```bash
+   cd docker
+   docker-compose up -d neo4j weaviate postgres redis jaeger prometheus grafana
+   ```
 
-reasoning problems across repositories, infrastructure, and execution history.
+4. **Install dependencies**
+   ```bash
+   poetry install
+   ```
 
-Instead of isolated AI prompts, the system operates with:
+5. **Run database migrations**
+   ```bash
+   # PostgreSQL schema is auto-created via init-db.sql
+   ```
 
-- full repository awareness
-- architectural understanding
-- multi-step operational workflows
-- constrained autonomous execution
+6. **Start API**
+   ```bash
+   poetry run uvicorn bob.main:app --reload
+   ```
 
----
+7. **Verify installation**
+   ```bash
+   curl http://localhost:8000/health
+   ```
 
-# **Primary Use Case**
+### Using Docker Compose (Recommended)
 
-## **Production Incident Response**
-
-Example:
-
-```text
-Payment API begins returning HTTP 500 errors after deployment.
+```bash
+cd docker
+docker-compose up -d
 ```
 
-RuntimeOps:
+This starts all services including the API.
 
-- ingests logs and stack traces
-- analyzes deployment diff
-- traces impacted services
-- identifies likely regression source
-- explains architectural impact
-- proposes patch
-- generates regression tests
-- prepares remediation PR
-- evaluates deployment risk
-- requests approval before high-risk execution
+**Access Points:**
+- REST API: http://localhost:8000
+- gRPC: localhost:50052
+- Neo4j Browser: http://localhost:7474
+- Weaviate: http://localhost:8080
+- Grafana: http://localhost:3000 (admin/admin)
+- Jaeger UI: http://localhost:16686
+- Prometheus: http://localhost:9090
 
 ---
 
-# **Why IBM Bob Matters**
+## Architecture
 
-IBM Bob provides:
-
-- repository-wide reasoning
-- architecture understanding
-- cross-file context awareness
-- multi-step code analysis
-- software system comprehension
-
-RuntimeOps uses Bob as the central repository intelligence engine.
-
-Bob enables:
-
-- dependency tracing
-- impact analysis
-- architectural navigation
-- semantic understanding of large systems
-
-Without repository awareness, autonomous engineering workflows become shallow and unreliable.
-
----
-
-# **System Architecture**
-
-```mermaid
-graph TD
-
-    A["Logs / CI Failures / Alerts / Stack Traces"]
-        --> B["Incident Orchestrator"]
-
-    B --> C["IBM Bob Repository Intelligence"]
-
-    C --> D1["Root Cause Agent"]
-    C --> D2["Patch Generation Agent"]
-    C --> D3["Test Intelligence Agent"]
-    C --> D4["Dependency Analysis Agent"]
-    C --> D5["Risk Analysis Agent"]
-
-    D1 --> E["Operational Decision Engine"]
-    D2 --> E
-    D3 --> E
-    D4 --> E
-    D5 --> E
-
-    E --> F["Execution Safeguards Layer"]
-
-    F --> G1["GitHub PR Creation"]
-    F --> G2["CI/CD Pipelines"]
-    F --> G3["Test Execution"]
-    F --> G4["Developer Approval Workflow"]
-
-    F --> H["Audit Timeline"]
-
-    style C fill:#1d3557,color:#fff
-    style F fill:#2a2a2a,color:#fff
+```
+RuntimeOps/
+├── src/
+│   ├── ingestion/          # Repository cloning, parsing, indexing
+│   ├── parsers/            # Tree-sitter language parsers
+│   ├── graph/              # Neo4j graph operations
+│   ├── semantic/           # Weaviate vector operations
+│   ├── query/              # Query gateway and routing
+│   ├── api/                # FastAPI + gRPC endpoints
+│   ├── security/           # Authentication and encryption
+│   ├── observability/      # OpenTelemetry tracing
+│   ├── storage/            # Redis cache, PostgreSQL registry
+│   └── tools/              # Agent-facing tool suite
+├── tests/                  # Unit, integration, system tests
+├── docs/                   # Documentation
+├── docker/                 # Docker configurations
+└── scripts/                # Utility scripts
 ```
 
 ---
 
-# **Key Features**
+## Development
 
-# **1. Repository-Aware Incident Analysis**
+### Running Tests
 
-RuntimeOps understands:
+```bash
+# Unit tests
+poetry run pytest tests/unit -v
 
-- service boundaries
-- architectural relationships
-- dependency graphs
-- cross-file interactions
-- deployment impact
+# Integration tests
+poetry run pytest tests/integration -v
 
-The system can:
+# All tests with coverage
+poetry run pytest --cov=bob --cov-report=html
 
-- trace failures through repositories
-- correlate operational signals with code changes
-- identify likely root causes
+# Performance tests
+poetry run locust -f tests/performance/locustfile.py
+```
 
----
+### Code Quality
 
-# **2. Autonomous Root Cause Investigation**
+```bash
+# Format code
+poetry run black src/ tests/
+poetry run isort src/ tests/
 
-The system:
+# Lint
+poetry run flake8 src/ tests/
+poetry run mypy src/
 
-- analyzes logs
-- parses stack traces
-- maps execution flows
-- identifies suspicious commits
-- correlates regressions with deployments
+# Security scan
+poetry run bandit -r src/
+```
 
-Output:
+### Pre-commit Hooks
 
-```text
-Probable Root Cause:
-Authentication middleware introduced null session handling regression in payment-service/auth/session.py
-Confidence: 87%
+```bash
+# Install pre-commit hooks
+poetry run pre-commit install
+
+# Run manually
+poetry run pre-commit run --all-files
 ```
 
 ---
 
-# **3. Patch Generation**
+## API Documentation
 
-RuntimeOps can:
+### REST API
 
-- generate remediation patches
-- suggest architectural fixes
-- update impacted files
-- preserve repository conventions
+Base URL: `http://localhost:8000/api/v1/bob/`
 
-The generated patch includes:
+**Endpoints:**
+- `POST /search` - Semantic code search
+- `POST /resolve-stack-trace` - Resolve stack trace to files
+- `GET /dependency-graph` - Retrieve dependency graph
+- `POST /blast-radius` - Compute change impact
+- `GET /file` - Fetch file content
+- `GET /commit-diff` - Analyze commit diff
+- `GET /health` - Service health check
 
-- explanation
-- impacted services
-- rollback guidance
+**Interactive Docs:**
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
----
+### gRPC API
 
-# **4. Test Intelligence**
+Port: `50052`
 
-The system automatically:
-
-- identifies affected test suites
-- generates regression tests
-- predicts blast radius
-- validates fix confidence
-
-This reduces:
-
-- broken deployments
-- regression propagation
-- manual QA effort
+See `src/api/protos/` for service definitions.
 
 ---
 
-# **5. Deployment Risk Analysis**
-
-RuntimeOps classifies engineering actions by operational risk.
-
-Example:
-
-|**Action**|**Risk**|
-|---|---|
-|Generate documentation|LOW|
-|Update test files|LOW|
-|Modify dependency versions|MEDIUM|
-|Deploy to production|HIGH|
-
-High-risk operations require explicit approval.
-
----
-
-# **6. Controlled Autonomous Workflows**
-
-The platform supports:
-
-- safe automation
-- constrained execution
-- developer oversight
-
-The system never performs destructive operations silently.
-
-Examples:
-
-- production deployment approvals
-- rollback confirmations
-- infrastructure modification safeguards
-
----
-
-# **7. Engineering Audit Timeline**
-
-Every action is recorded into a replayable operational timeline.
-
-Example:
-
-```text
-[20:01] Incident detected
-[20:02] Repository analysis started
-[20:03] Payment service dependency graph mapped
-[20:04] Regression identified
-[20:05] Patch generated
-[20:06] Deployment approval requested
-```
-
-This improves:
-
-- explainability
-- operational trust
-- debugging visibility
-
----
-
-# **Multi-Agent Workflow**
-
-RuntimeOps coordinates specialized agents:
-
-|**Agent**|**Responsibility**|
-|---|---|
-|Root Cause Agent|Failure investigation|
-|Patch Agent|Remediation generation|
-|Test Agent|Regression prevention|
-|Dependency Agent|Blast radius analysis|
-|Risk Agent|Operational safety scoring|
-
-Each agent operates with repository context provided by IBM Bob.
-
----
-
-# **Example Workflow**
-
-## **Incident**
-
-```text
-Checkout API latency spikes after deployment.
-```
-
-## **RuntimeOps Flow**
-
-### **Step 1**
-
-CI/CD alert ingested.
-
-### **Step 2**
-
-IBM Bob analyzes:
-
-- deployment diff
-- impacted services
-- repository architecture
-
-### **Step 3**
-
-Root Cause Agent identifies:
-
-```text
-Redis connection pool exhaustion caused by retry-loop regression.
-```
-
-### **Step 4**
-
-Patch Agent:
-
-- generates fix
-- updates retry strategy
-
-### **Step 5**
-
-Test Agent:
-
-- creates regression test
-- validates connection lifecycle
-
-### **Step 6**
-
-Risk Engine classifies:
-
-```text
-Production deployment = HIGH RISK
-```
-
-### **Step 7**
-
-Developer approval requested.
-
-### **Step 8**
-
-PR generated with:
-
-- patch
-- reasoning
-- incident summary
-- rollback instructions
-
----
-
-# **Technical Stack**
-
-|**Layer**|**Technology**|
-|---|---|
-|Frontend|Next.js + Tailwind|
-|Backend|FastAPI|
-|Repository Intelligence|IBM Bob|
-|Orchestration|LangGraph|
-|LLM Layer|Gemini / OpenAI|
-|Queue / State|Redis|
-|Observability|OpenTelemetry|
-|Persistence|PostgreSQL|
-|CI Integration|GitHub Actions|
-|Deployment|Docker Compose|
-
----
-
-# **Frontend Experience**
-
-The UI focuses on:
-
-- operational clarity
-- repository visibility
-- incident timelines
-- remediation workflows
-
-Core views:
-
-- Incident Dashboard
-- Repository Graph
-- Risk Analysis Panel
-- Approval Queue
-- Generated PR Review
-- Execution Timeline
-
----
-
-# **Example UI Panels**
-
-## **Incident Overview**
-
-```text
-Severity: HIGH
-Affected Services: payment-api, auth-service
-Deployment Correlation: YES
-Likely Regression Commit: 8f4c2ab
-```
-
-## **AI Reasoning**
-
-```text
-Root Cause Confidence: 87%
-Primary Failure Source:
-Session validation middleware retry recursion.
-```
-
-## **Risk Panel**
-
-```text
-Operation:
-Deploy generated patch to production
-
-Risk Level:
-HIGH
-
-Approval Required:
-YES
+## Configuration
+
+Key environment variables (see `.env.example` for full list):
+
+```bash
+# Database connections
+NEO4J_URI=bolt://localhost:7687
+WEAVIATE_URL=http://localhost:8080
+POSTGRES_HOST=localhost
+REDIS_HOST=localhost
+
+# LLM providers
+OPENAI_API_KEY=your-key
+LLM_PROVIDER=openai
+
+# Security
+JWT_SECRET_KEY=your-secret
+ENCRYPTION_KEY=your-fernet-key
+
+# Performance
+MAX_CONCURRENT_INDEXING_JOBS=5
+QUERY_TIMEOUT_SECONDS=10
 ```
 
 ---
 
-# **Why This Project Matters**
+## Monitoring
 
-AI coding assistants currently optimize:
+### Metrics
 
-- code generation
+Prometheus metrics available at: `http://localhost:8000/metrics`
 
-RuntimeOps optimizes:
+Key metrics:
+- `bob_queries_total` - Total queries processed
+- `bob_query_latency_seconds` - Query latency histogram
+- `bob_ingest_jobs_total` - Total indexing jobs
+- `bob_errors_total` - Error count
 
-- engineering operations
+### Tracing
 
-This is the next evolution:
+Distributed traces available in Jaeger: `http://localhost:16686`
 
-AI-native operational engineering workflows.
+### Dashboards
 
-The platform reduces:
-
-- debugging time
-- operational overhead
-- repository navigation cost
-- remediation coordination complexity
-
-while increasing:
-
-- reliability
-- explainability
-- developer confidence
+Grafana dashboards: `http://localhost:3000`
 
 ---
 
-# **Innovation**
+## Deployment
 
-RuntimeOps combines:
+### Production Dockerfile
 
-- repository-aware AI reasoning
-- operational intelligence
-- autonomous engineering workflows
-- controlled execution safeguards
+```bash
+docker build -f docker/Dockerfile -t runtimeops:1.0.0 .
+```
 
-Unlike traditional copilots, RuntimeOps:
+### Kubernetes
 
-- reasons across systems
-- correlates operational state with repository structure
-- orchestrates remediation workflows
-- assists engineering operations end-to-end
+```bash
+kubectl apply -f k8s/
+```
 
----
-
-# **Hackathon Alignment**
-
-RuntimeOps directly aligns with the hackathon challenge:
-
-|**Challenge Goal**|**RuntimeOps Alignment**|
-|---|---|
-|Improve software workflows|Autonomous incident remediation|
-|Use repository context|IBM Bob repository reasoning|
-|Reduce repetitive work|Automated debugging + patch generation|
-|Practical developer tooling|Engineering operations platform|
-|Multi-step workflows|Investigation → remediation → validation|
-|Real-world value|Production engineering acceleration|
+See `docs/deployment/` for detailed deployment guides.
 
 ---
 
-# **Future Scope**
+## Contributing
 
-Future versions could support:
+1. Create a feature branch from `develop`
+2. Make changes following code style guidelines
+3. Add tests for new functionality
+4. Ensure all tests pass and coverage >80%
+5. Submit pull request
 
-- Kubernetes remediation
-- Infrastructure-as-Code analysis
-- autonomous rollback systems
-- distributed tracing integration
-- cross-repository architecture reasoning
-- security-aware remediation
-- enterprise policy engines
+See `CONTRIBUTING.md` for detailed guidelines.
 
 ---
 
-# **Final Positioning**
+## License
 
-RuntimeOps transforms AI from a coding assistant into an operational engineering partner capable of understanding repositories, reasoning through failures, and safely accelerating software remediation workflows.
+Proprietary - RuntimeOps Engineering
+
+---
+
+## Support
+
+- **Documentation**: `docs/`
+- **Issues**: GitHub Issues
+- **Internal Slack**: #runtimeops-dev
+
+---
+
+## Roadmap
+
+### v1.0 (Current)
+- ✅ Multi-language parsing (Python, TS, Go, Java)
+- ✅ Semantic code search
+- ✅ Dependency graph analysis
+- ✅ REST + gRPC APIs
+
+### v1.1 (Planned)
+- [ ] Kubernetes manifest analysis
+- [ ] Infrastructure-as-Code support
+- [ ] Cross-repository reasoning
+- [ ] Enhanced security scanning
+
+### v2.0 (Future)
+- [ ] Real-time code intelligence
+- [ ] Autonomous refactoring suggestions
+- [ ] ML-based anomaly detection
+
+---
+
+*Repository Intelligence Agent v1.0.0 | RuntimeOps Engineering | May 2026*

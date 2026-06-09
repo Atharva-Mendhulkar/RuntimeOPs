@@ -1,0 +1,219 @@
+# IBM Bob - Prometheus Alerting Rules
+# Alert definitions for monitoring Bob's health and performance
+
+groups:
+  - name: bob_critical_alerts
+    interval: 30s
+    rules:
+      # Service availability
+      - alert: BobServiceDown
+        expr: up{job="bob"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: service
+        annotations:
+          summary: "Bob service is down"
+          description: "Bob service has been down for more than 1 minute"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/service-down"
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(bob_http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/high-error-rate"
+
+      # Database connection pool exhausted
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          bob_db_connections_active{db_type="postgres"} > 90
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL connection pool exhausted"
+          description: "Active connections: {{ $value }} (threshold: 90)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/db-pool-exhausted"
+
+      # Neo4j connection issues
+      - alert: Neo4jConnectionFailure
+        expr: |
+          bob_db_queries_total{db_type="neo4j",status="error"} > 10
+        for: 2m
+        labels:
+          severity: critical
+          component: graph
+        annotations:
+          summary: "Neo4j connection failures detected"
+          description: "{{ $value }} failed queries in the last 2 minutes"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/neo4j-connection-failure"
+
+      # Redis connection issues
+      - alert: RedisConnectionFailure
+        expr: |
+          bob_db_queries_total{db_type="redis",status="error"} > 10
+        for: 2m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis connection failures detected"
+          description: "{{ $value }} failed queries in the last 2 minutes"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/redis-connection-failure"
+
+  - name: bob_warning_alerts
+    interval: 1m
+    rules:
+      # Slow queries
+      - alert: SlowQueries
+        expr: |
+          histogram_quantile(0.95, rate(bob_query_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: query
+        annotations:
+          summary: "Slow queries detected"
+          description: "P95 query latency is {{ $value }}s (threshold: 5s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/slow-queries"
+
+      # Slow HTTP requests
+      - alert: SlowHTTPRequests
+        expr: |
+          histogram_quantile(0.95, rate(bob_http_request_duration_seconds_bucket[5m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Slow HTTP requests detected"
+          description: "P95 request latency is {{ $value }}s (threshold: 10s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/slow-requests"
+
+      # Low cache hit rate
+      - alert: LowCacheHitRate
+        expr: |
+          rate(bob_cache_hits_total[5m]) / 
+          (rate(bob_cache_hits_total[5m]) + rate(bob_cache_misses_total[5m])) < 0.5
+        for: 15m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/low-cache-hit-rate"
+
+      # High cache eviction rate
+      - alert: HighCacheEvictionRate
+        expr: |
+          rate(bob_cache_evictions_total[5m]) > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "High cache eviction rate"
+          description: "Cache eviction rate is {{ $value }}/s (threshold: 100/s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/high-cache-eviction"
+
+      # Indexing failures
+      - alert: HighIndexingFailureRate
+        expr: |
+          rate(bob_repositories_indexed_total{status="error"}[10m]) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+          component: ingestion
+        annotations:
+          summary: "High indexing failure rate"
+          description: "Indexing failure rate is {{ $value }}/s (threshold: 0.1/s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/indexing-failures"
+
+      # Parsing errors
+      - alert: HighParsingErrorRate
+        expr: |
+          rate(bob_parse_errors_total[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: parser
+        annotations:
+          summary: "High parsing error rate"
+          description: "Parsing error rate is {{ $value }}/s (threshold: 1/s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/parsing-errors"
+
+      # Vector store issues
+      - alert: VectorStoreSlowQueries
+        expr: |
+          histogram_quantile(0.95, rate(bob_vector_search_duration_seconds_bucket[5m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+          component: vector_store
+        annotations:
+          summary: "Slow vector store queries"
+          description: "P95 vector search latency is {{ $value }}s (threshold: 2s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/slow-vector-queries"
+
+      # Graph traversal performance
+      - alert: SlowGraphTraversal
+        expr: |
+          histogram_quantile(0.95, rate(bob_graph_traversal_duration_seconds_bucket[5m])) > 3
+        for: 10m
+        labels:
+          severity: warning
+          component: graph
+        annotations:
+          summary: "Slow graph traversal detected"
+          description: "P95 graph traversal latency is {{ $value }}s (threshold: 3s)"
+          runbook_url: "https://docs.bob.ibm.com/runbooks/slow-graph-traversal"
+
+  - name: bob_info_alerts
+    interval: 5m
+    rules:
+      # Repository growth
+      - alert: RepositoryGrowth
+        expr: |
+          rate(bob_repositories_active[1h]) > 10
+        for: 1h
+        labels:
+          severity: info
+          component: ingestion
+        annotations:
+          summary: "High repository growth rate"
+          description: "Repository growth rate is {{ $value }}/hour"
+
+      # High query volume
+      - alert: HighQueryVolume
+        expr: |
+          rate(bob_queries_total[5m]) > 100
+        for: 30m
+        labels:
+          severity: info
+          component: query
+        annotations:
+          summary: "High query volume"
+          description: "Query rate is {{ $value }}/s (threshold: 100/s)"
+
+      # Background job backlog
+      - alert: BackgroundJobBacklog
+        expr: |
+          bob_background_jobs_active > 50
+        for: 30m
+        labels:
+          severity: info
+          component: background_jobs
+        annotations:
+          summary: "Background job backlog detected"
+          description: "{{ $value }} active background jobs (threshold: 50)"
+
+# Made with Bob

@@ -1,0 +1,486 @@
+{
+  "dashboard": {
+    "title": "IBM Bob - Repository Intelligence",
+    "tags": ["bob", "observability", "repository-intelligence"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Overview",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 1},
+        "targets": [
+          {
+            "expr": "rate(bob_http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 1},
+        "targets": [
+          {
+            "expr": "rate(bob_http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx Errors",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(bob_http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx Errors",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Errors/sec"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.05], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Error Rate",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Request Latency (P50, P95, P99)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(bob_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(bob_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(bob_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Repository Operations",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9}
+      },
+      {
+        "id": 11,
+        "title": "Repositories Indexed",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 10},
+        "targets": [
+          {
+            "expr": "bob_repositories_indexed_total",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "orientation": "auto"
+        }
+      },
+      {
+        "id": 12,
+        "title": "Active Repositories",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 10},
+        "targets": [
+          {
+            "expr": "bob_repositories_active",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "orientation": "auto"
+        }
+      },
+      {
+        "id": 13,
+        "title": "Indexing Duration",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bob_repository_index_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 Indexing Duration",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Files Processed by Language",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+        "targets": [
+          {
+            "expr": "rate(bob_repository_files_processed_total[5m])",
+            "legendFormat": "{{language}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Files/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Query Performance",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22}
+      },
+      {
+        "id": 21,
+        "title": "Query Rate by Type",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+        "targets": [
+          {
+            "expr": "rate(bob_queries_total[5m])",
+            "legendFormat": "{{query_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Queries/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 22,
+        "title": "Query Latency by Type",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bob_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{query_type}} P95",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 30,
+        "title": "Cache Performance",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 31}
+      },
+      {
+        "id": 31,
+        "title": "Cache Hit Rate",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 32},
+        "targets": [
+          {
+            "expr": "rate(bob_cache_hits_total[5m]) / (rate(bob_cache_hits_total[5m]) + rate(bob_cache_misses_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.5, "color": "yellow"},
+                {"value": 0.8, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 32,
+        "title": "Cache Operations",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 32},
+        "targets": [
+          {
+            "expr": "rate(bob_cache_hits_total[5m])",
+            "legendFormat": "Hits - {{cache_type}}",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(bob_cache_misses_total[5m])",
+            "legendFormat": "Misses - {{cache_type}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Operations/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 33,
+        "title": "Cache Evictions",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 32},
+        "targets": [
+          {
+            "expr": "rate(bob_cache_evictions_total[5m])",
+            "legendFormat": "{{cache_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Evictions/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 40,
+        "title": "Database Performance",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 40}
+      },
+      {
+        "id": 41,
+        "title": "Active Database Connections",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 41},
+        "targets": [
+          {
+            "expr": "bob_db_connections_active",
+            "legendFormat": "{{db_type}} - Active",
+            "refId": "A"
+          },
+          {
+            "expr": "bob_db_connections_idle",
+            "legendFormat": "{{db_type}} - Idle",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Connections"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 42,
+        "title": "Database Query Duration",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 41},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bob_db_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{db_type}} - {{operation}} P95",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 50,
+        "title": "Vector Store & Graph",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 49}
+      },
+      {
+        "id": 51,
+        "title": "Vector Search Duration",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 50},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bob_vector_search_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 52,
+        "title": "Graph Nodes & Edges",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 50},
+        "targets": [
+          {
+            "expr": "sum(bob_graph_nodes_total)",
+            "legendFormat": "Total Nodes",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(bob_graph_edges_total)",
+            "legendFormat": "Total Edges",
+            "refId": "B"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "orientation": "auto"
+        }
+      },
+      {
+        "id": 53,
+        "title": "Graph Traversal Duration",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 50},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bob_graph_traversal_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{traversal_type}} P95",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 60,
+        "title": "System Health",
+        "type": "row",
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 58}
+      },
+      {
+        "id": 61,
+        "title": "Error Rate by Component",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 59},
+        "targets": [
+          {
+            "expr": "rate(bob_errors_total[5m])",
+            "legendFormat": "{{component}} - {{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Errors/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 62,
+        "title": "Background Jobs",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 59},
+        "targets": [
+          {
+            "expr": "bob_background_jobs_active",
+            "legendFormat": "{{job_type}} - Active",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(bob_background_jobs_completed_total[5m])",
+            "legendFormat": "{{job_type}} - Completed/sec",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Jobs"},
+          {"format": "short"}
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": {
+            "text": "Prometheus",
+            "value": "Prometheus"
+          }
+        },
+        {
+          "name": "environment",
+          "type": "query",
+          "datasource": "$datasource",
+          "query": "label_values(bob_system_info, environment)",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "$datasource",
+          "enable": true,
+          "expr": "ALERTS{alertname=~\"Bob.*\"}",
+          "iconColor": "red",
+          "name": "Alerts",
+          "step": "60s",
+          "tagKeys": "alertname,severity",
+          "textFormat": "{{alertname}}",
+          "titleFormat": "Alert"
+        }
+      ]
+    }
+  }
+}

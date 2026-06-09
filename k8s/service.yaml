@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: runtimeops-agent
+  namespace: default
+  labels:
+    app: runtimeops-agent
+spec:
+  type: ClusterIP
+  ports:
+  - name: rest
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  - name: grpc
+    port: 50052
+    targetPort: 50052
+    protocol: TCP
+  selector:
+    app: runtimeops-agent

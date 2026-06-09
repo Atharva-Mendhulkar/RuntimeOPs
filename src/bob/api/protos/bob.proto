@@ -1,0 +1,223 @@
+syntax = "proto3";
+
+package bob;
+
+// Service defining all core capabilities of IBM Bob
+service BobService {
+  rpc Search (SearchRequest) returns (SearchResponse);
+  rpc ResolveStackTrace (StackTraceRequest) returns (StackTraceResponse);
+  rpc GetDependencyGraph (DependencyGraphRequest) returns (DependencyGraphResponse);
+  rpc ComputeBlastRadius (BlastRadiusRequest) returns (BlastRadiusResponse);
+  rpc GetFile (FileRequest) returns (FileResponse);
+  rpc GetCommitDiff (CommitDiffRequest) returns (CommitDiffResponse);
+  rpc GetHealth (HealthRequest) returns (HealthResponse);
+  rpc Batch (BatchRequest) returns (BatchResponse);
+}
+
+// -------------------------------------------------------------
+// Search Models (EP-001)
+// -------------------------------------------------------------
+
+message SearchRequest {
+  string repo_id = 1;
+  string query = 2;
+  int32 k = 3;
+  map<string, string> filter = 4;
+}
+
+message SearchResult {
+  string file_path = 1;
+  string symbol_name = 2;
+  string symbol_type = 3;
+  int32 start_line = 4;
+  int32 end_line = 5;
+  string content = 6;
+  double confidence = 7;
+  string language = 8;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+  int32 total = 2;
+  double query_time_ms = 3;
+  string repo_id = 4;
+}
+
+// -------------------------------------------------------------
+// Stack Trace Models (EP-002)
+// -------------------------------------------------------------
+
+message StackTraceRequest {
+  string repo_id = 1;
+  string trace = 2;
+}
+
+message StackFrame {
+  optional string file_path = 1;
+  optional int32 line_number = 2;
+  optional string function = 3;
+  optional string commit_sha = 4;
+  optional string author = 5;
+  string raw_frame = 6;
+}
+
+message StackTraceResponse {
+  repeated StackFrame frames = 1;
+  int32 total_frames = 2;
+  int32 resolved_frames = 3;
+  string repo_id = 4;
+}
+
+// -------------------------------------------------------------
+// Dependency Graph Models (EP-003)
+// -------------------------------------------------------------
+
+message DependencyGraphRequest {
+  string repo_id = 1;
+  string file_path = 2;
+  int32 hops = 3;
+  string direction = 4; // upstream, downstream, both
+}
+
+message DependencyEdge {
+  string source = 1;
+  string target = 2;
+  string relationship = 3;
+}
+
+message DependencyGraphResponse {
+  string root_file = 1;
+  repeated DependencyEdge edges = 2;
+  int32 node_count = 3;
+  int32 edge_count = 4;
+  int32 max_hops = 5;
+  string repo_id = 6;
+}
+
+// -------------------------------------------------------------
+// Blast Radius Models (EP-004)
+// -------------------------------------------------------------
+
+message BlastRadiusRequest {
+  string repo_id = 1;
+  repeated string files = 2;
+}
+
+message ImpactedFile {
+  string file_path = 1;
+  int32 distance = 2;
+  optional double acs_score = 3;
+  repeated string downstream_services = 4;
+  repeated string test_files = 5;
+}
+
+message BlastRadiusResponse {
+  repeated string changed_files = 1;
+  repeated ImpactedFile impacted_files = 2;
+  int32 total_impacted = 3;
+  repeated string affected_services = 4;
+  string repo_id = 5;
+}
+
+// -------------------------------------------------------------
+// File Models (EP-005)
+// -------------------------------------------------------------
+
+message FileRequest {
+  string repo_id = 1;
+  string file_path = 2;
+}
+
+message FileSymbol {
+  string name = 1;
+  string type = 2;
+  int32 start_line = 3;
+  int32 end_line = 4;
+}
+
+message FileResponse {
+  string file_path = 1;
+  string content = 2;
+  string language = 3;
+  int32 total_lines = 4;
+  repeated FileSymbol symbols = 5;
+  repeated string imports = 6;
+  optional string last_modified = 7;
+  string repo_id = 8;
+}
+
+// -------------------------------------------------------------
+// Commit Diff Models (EP-006)
+// -------------------------------------------------------------
+
+message CommitDiffRequest {
+  string repo_id = 1;
+  string commit_sha = 2;
+}
+
+message ChangedFile {
+  string file_path = 1;
+  string change_type = 2;
+  int32 additions = 3;
+  int32 deletions = 4;
+  repeated string impacted_files = 5;
+  repeated string test_files = 6;
+}
+
+message CommitDiffResponse {
+  string commit_sha = 1;
+  optional string author = 2;
+  optional string message = 3;
+  optional string timestamp = 4;
+  repeated ChangedFile changed_files = 5;
+  int32 total_additions = 6;
+  int32 total_deletions = 7;
+  string repo_id = 8;
+}
+
+// -------------------------------------------------------------
+// Health Models (EP-007)
+// -------------------------------------------------------------
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string version = 2;
+  map<string, string> services = 3;
+  map<string, string> metrics = 4;
+  int32 repos_indexed = 5;
+  double query_p95_ms = 6;
+  int32 index_queue_depth = 7;
+  optional string last_error = 8;
+}
+
+// -------------------------------------------------------------
+// Batch Models (EP-008)
+// -------------------------------------------------------------
+
+message SubQuery {
+  string query_id = 1;
+  string query_type = 2;
+  string params_json = 3;
+}
+
+message BatchRequest {
+  repeated SubQuery queries = 1;
+}
+
+message SubQueryResult {
+  string query_id = 1;
+  bool success = 2;
+  optional string result_json = 3;
+  optional string error = 4;
+  double execution_time_ms = 5;
+}
+
+message BatchResponse {
+  repeated SubQueryResult results = 1;
+  int32 total_queries = 2;
+  int32 successful_queries = 3;
+  int32 failed_queries = 4;
+  double total_time_ms = 5;
+}

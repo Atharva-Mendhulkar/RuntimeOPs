@@ -23,7 +23,7 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 COPY pyproject.toml poetry.lock* ./
 
 # Install only production dependencies
-RUN poetry install --only main --no-interaction --no-ansi --no-root
+RUN poetry install --without dev,docs --no-interaction --no-ansi --no-root
 
 # ==========================================
 # Stage 2: Production Runtime

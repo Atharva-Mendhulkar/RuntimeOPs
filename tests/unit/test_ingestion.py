@@ -5,7 +5,6 @@ Unit tests for ingestion components
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-
 from bob.ingestion.analyzer import StructuralAnalyzer
 from bob.ingestion.orchestrator import IngestionStatus, IngestOrchestrator
 from bob.parsers.base import (

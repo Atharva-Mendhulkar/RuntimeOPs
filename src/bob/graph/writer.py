@@ -178,7 +178,8 @@ class GraphWriter:
 
         # Batch write files
         file_batches = [
-            parse_results[i : i + batch_size] for i in range(0, len(parse_results), batch_size)  # noqa: E203  # noqa: E501
+            parse_results[i : i + batch_size]  # noqa: E203
+            for i in range(0, len(parse_results), batch_size)
         ]
 
         for batch in file_batches:
@@ -191,7 +192,8 @@ class GraphWriter:
                 all_symbols.append((result, symbol))
 
         symbol_batches = [
-            all_symbols[i : i + batch_size] for i in range(0, len(all_symbols), batch_size)  # noqa: E203  # noqa: E501
+            all_symbols[i : i + batch_size]  # noqa: E203
+            for i in range(0, len(all_symbols), batch_size)
         ]
 
         for batch in symbol_batches:
@@ -204,7 +206,8 @@ class GraphWriter:
                 all_imports.append((result, import_stmt))
 
         import_batches = [
-            all_imports[i : i + batch_size] for i in range(0, len(all_imports), batch_size)  # noqa: E203  # noqa: E501
+            all_imports[i : i + batch_size]  # noqa: E203
+            for i in range(0, len(all_imports), batch_size)
         ]
 
         for batch in import_batches:

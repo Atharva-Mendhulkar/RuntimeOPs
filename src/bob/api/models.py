@@ -3,7 +3,7 @@ IBM Bob - API Request/Response Models
 Pydantic models for all REST endpoints with validation and examples
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 from uuid import UUID
 
@@ -383,7 +383,10 @@ class ErrorDetail(BaseModel):
     code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
     details: dict[str, Any] | None = Field(None, description="Additional error details")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Timestamp of the request",
+    )
 
 
 class ErrorResponse(BaseModel):

@@ -91,14 +91,14 @@ class VectorStore:
             logger.info("Closed Weaviate connection")
 
     def _create_schema(self) -> None:
-        """Create CodeUnit schema if it doesn't exist"""
+        """Create Weaviate collections if they don't exist"""
+        assert self._client is not None, "Client not connected"
+        if self._client.collections.exists(self._collection_name):
+            logger.info(f"Collection {self._collection_name} already exists")
+            return
+        
+        # Create collection with schema
         try:
-            # Check if collection exists
-            if self._client.collections.exists(self._collection_name):
-                logger.info(f"Collection {self._collection_name} already exists")
-                return
-            
-            # Create collection with schema
             self._client.collections.create(
                 name=self._collection_name,
                 description="Code units (functions, classes, methods) with semantic embeddings",
@@ -208,6 +208,7 @@ class VectorStore:
         if not embeddings:
             return 0
         
+        assert self._client is not None, "Client not connected"
         collection = self._client.collections.get(self._collection_name)
         
         # Batch upsert

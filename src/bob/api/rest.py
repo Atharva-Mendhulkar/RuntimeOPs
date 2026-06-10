@@ -34,6 +34,7 @@ from bob.api.models import (
     SearchResult,
     StackTraceRequest,
     StackTraceResponse,
+    SubQuery,
     SubQueryResult,
 )
 from bob.config import get_settings
@@ -252,7 +253,7 @@ def _parse_stack_trace(trace: str) -> list[dict[str, Any]]:
     js_pattern = r'at (\w+) \(([^:]+):(\d+):(\d+)\)'
     
     for line in trace.split('\n'):
-        frame = {"raw_frame": line.strip()}
+        frame: dict[str, Any] = {"raw_frame": line.strip()}
         
         # Try Python pattern
         match = re.search(python_pattern, line)
@@ -752,6 +753,7 @@ async def batch_query(
                 failed += 1
             else:
                 # Sub-query succeeded
+                assert isinstance(result, SubQueryResult)
                 sub_query_results.append(result)
                 successful += 1
         
@@ -775,7 +777,7 @@ async def batch_query(
 
 
 async def _execute_sub_query(
-    sub_query: dict[str, Any],
+    sub_query: SubQuery,
     claims: dict[str, Any],
 ) -> SubQueryResult:
     """Execute a single sub-query with timeout"""
@@ -820,7 +822,7 @@ async def _execute_sub_query(
 
 
 async def _route_sub_query(
-    sub_query: dict[str, Any],
+    sub_query: SubQuery,
     claims: dict[str, Any],
 ) -> dict[str, Any]:
     """Route sub-query to appropriate handler"""
@@ -831,7 +833,8 @@ async def _route_sub_query(
     if query_type == "search":
         # Execute search
         request = SearchRequest(**params)
-        response = await search_code(request, claims)
+        dummy_response = Response()
+        response = await search_code(request, dummy_response, claims)
         return response.model_dump()
     
     elif query_type == "dependency_graph":

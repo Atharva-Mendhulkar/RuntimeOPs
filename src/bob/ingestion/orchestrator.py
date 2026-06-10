@@ -90,13 +90,13 @@ class IngestionResult:
 
     job_id: str
     repo_url: str
-    repo_metadata: RepositoryMetadata
-    parse_results: list[ParseResult]
-    analysis_result: AnalysisResult
-    embeddings: list[Embedding]
     conventions: dict[str, CodingConvention]
     progress: IngestionProgress
     success: bool
+    repo_metadata: RepositoryMetadata | None = None
+    parse_results: list[ParseResult] = field(default_factory=list)
+    analysis_result: AnalysisResult | None = None
+    embeddings: list[Embedding] = field(default_factory=list)
     error: str | None = None
 
 

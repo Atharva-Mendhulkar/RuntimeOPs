@@ -58,6 +58,7 @@ python-dotenv = "^1.0.0"
 httpx = "^0.25.0"
 tenacity = "^8.2.3"
 structlog = "^23.2.0"
+setuptools = ">=68.0.0"
 
 [tool.poetry.group.dev.dependencies]
 # Testing

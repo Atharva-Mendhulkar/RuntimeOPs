@@ -10,7 +10,7 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -97,9 +97,9 @@ class TracingManager:
 
         try:
             # Instrument PostgreSQL
-            Psycopg2Instrumentor().instrument()
+            PsycopgInstrumentor().instrument()
         except Exception as e:
-            print(f"⚠️  Failed to instrument Psycopg2: {e}")
+            print(f"⚠️  Failed to instrument Psycopg: {e}")
 
     def instrument_fastapi(self, app):
         """

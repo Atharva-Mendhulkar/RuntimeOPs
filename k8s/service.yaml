@@ -1,20 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: runtimeops-agent
-  namespace: default
-  labels:
-    app: runtimeops-agent
+  name: ibm-bob-api
 spec:
-  type: ClusterIP
-  ports:
-  - name: rest
-    port: 8000
-    targetPort: 8000
-    protocol: TCP
-  - name: grpc
-    port: 50052
-    targetPort: 50052
-    protocol: TCP
   selector:
-    app: runtimeops-agent
+    app: ibm-bob-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer

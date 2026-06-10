@@ -367,22 +367,32 @@ class GraphWriter:
     ) -> int:
         """Create DEFINES relationships between files and symbols"""
         query = """
-        MATCH (f:File {repo_id: $repo_id, file_path: $file_path})
-        MATCH (s:Symbol {repo_id: $repo_id, file_path: $file_path})
+        UNWIND $files AS file_path
+        MATCH (f:File {repo_id: $repo_id, file_path: file_path})
+        MATCH (s:Symbol {repo_id: $repo_id, file_path: file_path})
         MERGE (f)-[:DEFINES]->(s)
-        RETURN count(*) as count
+        RETURN count(s) as count
         """
         
+        files_with_symbols = [
+            r.file_path for r in parse_results if r.symbols
+        ]
+        
+        if not files_with_symbols:
+            return 0
+            
         total_count = 0
+        batch_size = self._batch_size
+        
         with self._driver.session() as session:
-            for result in parse_results:
-                if result.symbols:
-                    rel_result = session.run(
-                        query,
-                        repo_id=str(repo_id),
-                        file_path=result.file_path,
-                    )
-                    total_count += rel_result.single()["count"]
+            for i in range(0, len(files_with_symbols), batch_size):
+                batch = files_with_symbols[i:i+batch_size]
+                rel_result = session.run(
+                    query,
+                    repo_id=str(repo_id),
+                    files=batch,
+                )
+                total_count += rel_result.single()["count"]
         
         return total_count
 

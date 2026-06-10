@@ -10,6 +10,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 from bob.config import settings
@@ -163,6 +164,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configure GZip Middleware for API performance
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Add observability middleware (order matters - last added runs first)
 if settings.enable_metrics:

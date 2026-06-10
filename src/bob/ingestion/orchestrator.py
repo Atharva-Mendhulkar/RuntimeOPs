@@ -325,6 +325,9 @@ class IngestOrchestrator:
         progress: IngestionProgress,
     ) -> list[ParseResult]:
         """Parse all source files in repository"""
+        import time
+        import concurrent.futures
+        
         start_time = time.time()
         parse_results = []
         
@@ -341,27 +344,32 @@ class IngestOrchestrator:
         progress.total_files = len(source_files)
         logger.info(f"Found {len(source_files)} source files to parse")
         
-        # Parse each file
-        for file_path in source_files:
-            # Find appropriate parser
+        def parse_single_file(file_path: Path) -> ParseResult | None:
             parser = self._get_parser_for_file(file_path)
             if not parser:
-                continue
-            
+                return None
             try:
-                result = parser.parse_file(file_path)
-                parse_results.append(result)
-                progress.processed_files += 1
-                progress.total_symbols += len(result.symbols)
-                
-                if progress.processed_files % 100 == 0:
-                    logger.info(
-                        f"Parsed {progress.processed_files}/{progress.total_files} files "
-                        f"({progress.progress_percentage:.1f}%)"
-                    )
-            
+                return parser.parse_file(file_path)
             except Exception as e:
                 logger.warning(f"Failed to parse {file_path}: {e}")
+                return None
+
+        # Parse in parallel
+        max_workers = min(16, max(1, len(source_files)))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_file = {executor.submit(parse_single_file, f): f for f in source_files}
+            for future in concurrent.futures.as_completed(future_to_file):
+                result = future.result()
+                if result:
+                    parse_results.append(result)
+                    progress.processed_files += 1
+                    progress.total_symbols += len(result.symbols)
+                    
+                    if progress.processed_files % 100 == 0:
+                        logger.info(
+                            f"Parsed {progress.processed_files}/{progress.total_files} files "
+                            f"({progress.progress_percentage:.1f}%)"
+                        )
         
         elapsed = time.time() - start_time
         logger.info(

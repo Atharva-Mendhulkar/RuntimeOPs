@@ -7,10 +7,11 @@ import asyncio
 import logging
 import re
 import time
+import hashlib
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 from bob.api.models import (
@@ -86,6 +87,7 @@ async def authenticate(request: Request) -> dict[str, Any]:
 @router.post("/search", response_model=SearchResponse, tags=["search"])
 async def search_code(
     request: SearchRequest,
+    response: Response,
     claims: dict[str, Any] = Depends(authenticate),
 ) -> SearchResponse:
     """
@@ -116,6 +118,7 @@ async def search_code(
                 symbol_type=request.filter.get("symbol_type") if request.filter else None,
                 language=request.filter.get("language") if request.filter else None,
                 limit=request.k,
+                offset=request.skip,
                 min_certainty=0.7,
             )
         
@@ -148,12 +151,18 @@ async def search_code(
             f"Search completed: {len(search_results)} results in {query_time_ms:.2f}ms"
         )
         
-        return SearchResponse(
+        resp_model = SearchResponse(
             results=search_results,
             total=len(search_results),
             query_time_ms=query_time_ms,
             repo_id=str(request.repo_id),
         )
+        
+        # Add ETag header for caching
+        etag = hashlib.md5(resp_model.model_dump_json().encode()).hexdigest()
+        response.headers["ETag"] = f'W/"{etag}"'
+        
+        return resp_model
     
     except Exception as e:
         logger.error(f"Search failed: {e}", exc_info=True)

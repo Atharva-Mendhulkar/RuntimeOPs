@@ -8,7 +8,7 @@ from typing import Any
 from uuid import UUID
 
 import weaviate
-from weaviate.classes.config import Configure, DataType, Property
+from weaviate.classes.config import Configure, DataType, Property, VectorDistances
 from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.exceptions import WeaviateBaseError
 
@@ -103,6 +103,12 @@ class VectorStore:
                 name=self._collection_name,
                 description="Code units (functions, classes, methods) with semantic embeddings",
                 vectorizer_config=Configure.Vectorizer.none(),  # We provide our own vectors
+                vector_index_config=Configure.VectorIndex.hnsw(
+                    distance_metric=VectorDistances.COSINE,
+                    ef=128,
+                    ef_construction=256,
+                    max_connections=64,
+                ),
                 properties=[
                     Property(
                         name="repo_id",
@@ -243,6 +249,7 @@ class VectorStore:
         symbol_type: str | None = None,
         language: str | None = None,
         limit: int = 10,
+        offset: int = 0,
         min_certainty: float = 0.7,
     ) -> list[dict[str, Any]]:
         """
@@ -282,9 +289,11 @@ class VectorStore:
         
         # Perform search
         try:
+            # Weaviate v4 Python client passes offset to GraphQL
             response = collection.query.near_vector(
                 near_vector=query_vector,
                 limit=limit,
+                offset=offset,
                 filters=combined_filter,
                 return_metadata=MetadataQuery(certainty=True, distance=True),
             )

@@ -36,6 +36,11 @@ class SearchRequest(BaseModel):
         le=50,
         description="Number of results to return",
     )
+    skip: int = Field(
+        default=0,
+        ge=0,
+        description="Number of results to skip for pagination",
+    )
     filter: dict[str, Any] | None = Field(
         default=None,
         description="Optional filters (file_path, language, symbol_type)",

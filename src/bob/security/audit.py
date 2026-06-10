@@ -64,7 +64,7 @@ class AuditLogger:
     def __init__(self, db_connection):
         """
         Initialize audit logger.
-        
+
         Args:
             db_connection: Database connection for storing audit logs
         """
@@ -84,7 +84,7 @@ class AuditLogger:
     ) -> str:
         """
         Log an audit event.
-        
+
         Args:
             event_type: Type of audit event
             user_id: User identifier
@@ -95,7 +95,7 @@ class AuditLogger:
             ip_address: Client IP address
             user_agent: Client user agent
             request_id: Request correlation ID
-            
+
         Returns:
             Audit log entry ID
         """
@@ -143,7 +143,7 @@ class AuditLogger:
     ) -> str:
         """
         Log authentication attempt.
-        
+
         Args:
             user_id: User identifier
             success: Whether authentication succeeded
@@ -151,13 +151,11 @@ class AuditLogger:
             ip_address: Client IP address
             user_agent: Client user agent
             failure_reason: Reason for failure (if applicable)
-            
+
         Returns:
             Audit log entry ID
         """
-        event_type = (
-            AuditEventType.LOGIN_SUCCESS if success else AuditEventType.LOGIN_FAILURE
-        )
+        event_type = AuditEventType.LOGIN_SUCCESS if success else AuditEventType.LOGIN_FAILURE
 
         metadata = {
             "method": method,
@@ -188,7 +186,7 @@ class AuditLogger:
     ) -> str:
         """
         Log authorization check.
-        
+
         Args:
             user_id: User identifier
             resource: Resource being accessed
@@ -196,14 +194,12 @@ class AuditLogger:
             granted: Whether access was granted
             required_scope: Required permission scope
             user_scopes: User's permission scopes
-            
+
         Returns:
             Audit log entry ID
         """
         event_type = (
-            AuditEventType.PERMISSION_GRANTED
-            if granted
-            else AuditEventType.PERMISSION_DENIED
+            AuditEventType.PERMISSION_GRANTED if granted else AuditEventType.PERMISSION_DENIED
         )
 
         metadata = {
@@ -232,7 +228,7 @@ class AuditLogger:
     ) -> str:
         """
         Log data access event.
-        
+
         Args:
             user_id: User identifier
             repo_id: Repository UUID
@@ -241,7 +237,7 @@ class AuditLogger:
             query: Search query (if applicable)
             result_count: Number of results returned
             request_id: Request correlation ID
-            
+
         Returns:
             Audit log entry ID
         """
@@ -252,9 +248,7 @@ class AuditLogger:
             "blast": AuditEventType.BLAST_RADIUS_COMPUTED,
         }
 
-        event_type = event_type_map.get(
-            resource_type, AuditEventType.REPOSITORY_ACCESSED
-        )
+        event_type = event_type_map.get(resource_type, AuditEventType.REPOSITORY_ACCESSED)
 
         metadata: Dict[str, Any] = {
             "repo_id": repo_id,
@@ -287,14 +281,14 @@ class AuditLogger:
     ) -> str:
         """
         Log administrative action.
-        
+
         Args:
             admin_user_id: Administrator user ID
             action: Action performed
             target_user_id: Target user ID (if applicable)
             target_resource: Target resource (if applicable)
             changes: Changes made
-            
+
         Returns:
             Audit log entry ID
         """
@@ -336,7 +330,7 @@ class AuditLogger:
     ) -> str:
         """
         Log security event.
-        
+
         Args:
             event_type: Type of security event
             user_id: User identifier
@@ -344,7 +338,7 @@ class AuditLogger:
             severity: Event severity (low, medium, high, critical)
             ip_address: Client IP address
             metadata: Additional event metadata
-            
+
         Returns:
             Audit log entry ID
         """
@@ -377,7 +371,7 @@ class AuditLogger:
     ) -> List[Dict[str, Any]]:
         """
         Query audit log with filters.
-        
+
         Args:
             user_id: Filter by user ID
             event_type: Filter by event type
@@ -387,7 +381,7 @@ class AuditLogger:
             result: Filter by result (success/failure)
             limit: Maximum number of results
             offset: Result offset for pagination
-            
+
         Returns:
             List of audit log entries
         """
@@ -448,19 +442,17 @@ class AuditLogger:
     ) -> Dict[str, Any]:
         """
         Get activity summary for a user.
-        
+
         Args:
             user_id: User identifier
             days: Number of days to look back
-            
+
         Returns:
             Activity summary dictionary
         """
         cursor = self.db.cursor()
 
-        start_time = datetime.utcnow().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        start_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         start_time = start_time.replace(day=start_time.day - days)
 
         # Get event counts by type
@@ -528,18 +520,16 @@ class AuditLogger:
     def cleanup_old_logs(self, retention_days: int = 90) -> int:
         """
         Clean up audit logs older than retention period.
-        
+
         Args:
             retention_days: Number of days to retain logs
-            
+
         Returns:
             Number of logs deleted
         """
         cursor = self.db.cursor()
 
-        cutoff_date = datetime.utcnow().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        cutoff_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         cutoff_date = cutoff_date.replace(day=cutoff_date.day - retention_days)
 
         cursor.execute(

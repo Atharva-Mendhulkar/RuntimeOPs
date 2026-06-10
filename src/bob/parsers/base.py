@@ -78,7 +78,7 @@ class ParseResult:
 class LanguageParser(ABC):
     """
     Abstract base class for language-specific parsers.
-    
+
     Each language parser must:
     1. Use Tree-sitter for AST extraction
     2. Extract classes, functions, imports, line ranges, signatures
@@ -115,11 +115,11 @@ class LanguageParser(ABC):
     def _extract_symbols(self, tree: Any, source_code: bytes) -> list[CodeSymbol]:
         """
         Extract code symbols from AST.
-        
+
         Args:
             tree: Tree-sitter parse tree
             source_code: Source code as bytes
-            
+
         Returns:
             List of extracted symbols
         """
@@ -129,11 +129,11 @@ class LanguageParser(ABC):
     def _extract_imports(self, tree: Any, source_code: bytes) -> list[ImportStatement]:
         """
         Extract import statements from AST.
-        
+
         Args:
             tree: Tree-sitter parse tree
             source_code: Source code as bytes
-            
+
         Returns:
             List of import statements
         """
@@ -142,10 +142,10 @@ class LanguageParser(ABC):
     def can_parse(self, file_path: Path) -> bool:
         """
         Check if this parser can handle the given file.
-        
+
         Args:
             file_path: Path to file
-            
+
         Returns:
             True if file extension is supported
         """
@@ -154,10 +154,10 @@ class LanguageParser(ABC):
     def is_binary_file(self, file_path: Path) -> bool:
         """
         Check if file is binary (should be skipped).
-        
+
         Args:
             file_path: Path to file
-            
+
         Returns:
             True if file appears to be binary
         """
@@ -180,13 +180,13 @@ class LanguageParser(ABC):
     def parse_file(self, file_path: Path) -> ParseResult:
         """
         Parse a source file and extract all relevant information.
-        
+
         Args:
             file_path: Path to source file
-            
+
         Returns:
             ParseResult with extracted information
-            
+
         Raises:
             FileNotFoundError: If file doesn't exist
             ValueError: If file is binary or unsupported
@@ -265,11 +265,11 @@ class LanguageParser(ABC):
         """
         Extract exported symbols (default implementation).
         Override in language-specific parsers if needed.
-        
+
         Args:
             tree: Tree-sitter parse tree
             source_code: Source code as bytes
-            
+
         Returns:
             List of exported symbol names
         """
@@ -278,10 +278,10 @@ class LanguageParser(ABC):
     def _count_lines(self, source_text: str) -> tuple[int, int]:
         """
         Count code lines and comment lines.
-        
+
         Args:
             source_text: Source code as string
-            
+
         Returns:
             Tuple of (code_lines, comment_lines)
         """
@@ -304,10 +304,10 @@ class LanguageParser(ABC):
         """
         Check if a line is a comment (language-specific).
         Override in subclasses for accurate detection.
-        
+
         Args:
             line: Stripped line of code
-            
+
         Returns:
             True if line is a comment
         """
@@ -317,11 +317,11 @@ class LanguageParser(ABC):
     def _get_node_text(self, node: Any, source_code: bytes) -> str:
         """
         Extract text content from a Tree-sitter node.
-        
+
         Args:
             node: Tree-sitter node
             source_code: Source code as bytes
-            
+
         Returns:
             Node text as string
         """
@@ -330,10 +330,10 @@ class LanguageParser(ABC):
     def _get_node_line_range(self, node: Any) -> tuple[int, int]:
         """
         Get line range for a Tree-sitter node.
-        
+
         Args:
             node: Tree-sitter node
-            
+
         Returns:
             Tuple of (start_line, end_line) (1-indexed)
         """
@@ -346,11 +346,11 @@ class LanguageParser(ABC):
     ) -> list[ParseResult]:
         """
         Parse all supported files in a directory.
-        
+
         Args:
             directory: Directory to parse
             recursive: Whether to recurse into subdirectories
-            
+
         Returns:
             List of parse results
         """

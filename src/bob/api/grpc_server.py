@@ -26,8 +26,8 @@ from bob.api.rest import (
     get_dependency_graph,
     get_file,
     health_check,
-    search_code,
     resolve_stack_trace,
+    search_code,
 )
 from bob.config import get_settings
 from bob.exceptions import (
@@ -428,9 +428,7 @@ class GRPCServer:
     async def start(self) -> None:
         """Start the async gRPC server"""
         self.server = grpc.aio.server()
-        bob_pb2_grpc.add_BobServiceServicer_to_server(
-            BobServiceServicer(), self.server
-        )
+        bob_pb2_grpc.add_BobServiceServicer_to_server(BobServiceServicer(), self.server)
         listen_addr = f"{self.host}:{self.port}"
         self.server.add_insecure_port(listen_addr)
         logger.info(f"Starting gRPC server on {listen_addr}")

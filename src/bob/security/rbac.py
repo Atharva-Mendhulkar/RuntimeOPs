@@ -88,7 +88,7 @@ class AuthorizationChecker:
     def __init__(self, db_connection):
         """
         Initialize authorization checker.
-        
+
         Args:
             db_connection: Database connection for ACL lookups
         """
@@ -97,11 +97,11 @@ class AuthorizationChecker:
     def check_permission(self, user_scopes: List[str], required_scope: str) -> bool:
         """
         Check if user has required permission.
-        
+
         Args:
             user_scopes: List of user's permission scopes
             required_scope: Required scope for operation
-            
+
         Returns:
             True if user has permission
         """
@@ -119,14 +119,14 @@ class AuthorizationChecker:
     ) -> bool:
         """
         Check if user can access endpoint.
-        
+
         Args:
             user_scopes: List of user's permission scopes
             endpoint: API endpoint path
-            
+
         Returns:
             True if user has permission
-            
+
         Raises:
             AuthorizationError: If permission denied
         """
@@ -152,15 +152,15 @@ class AuthorizationChecker:
     ) -> bool:
         """
         Check if user can access specific repository.
-        
+
         Args:
             user_id: User identifier
             repo_id: Repository UUID
             action: Action type ('read' or 'write')
-            
+
         Returns:
             True if user has access
-            
+
         Raises:
             AuthorizationError: If access denied
         """
@@ -183,22 +183,20 @@ class AuthorizationChecker:
     def get_accessible_repositories(self, user_id: str) -> List[str]:
         """
         Get list of repositories user can access.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             List of repository IDs
         """
         cursor = self.db.cursor()
 
         # Get public repositories
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT repo_id FROM repositories
             WHERE is_public = TRUE
-            """
-        )
+            """)
         public_repos = [row[0] for row in cursor.fetchall()]
 
         # Get repositories from organization membership
@@ -236,12 +234,12 @@ class AuthorizationChecker:
     ) -> bool:
         """
         Grant user access to repository.
-        
+
         Args:
             user_id: User identifier
             repo_id: Repository UUID
             action: Action type ('read' or 'write')
-            
+
         Returns:
             True if access granted
         """
@@ -265,12 +263,12 @@ class AuthorizationChecker:
     ) -> bool:
         """
         Revoke user access to repository.
-        
+
         Args:
             user_id: User identifier
             repo_id: Repository UUID
             action: Action type to revoke (None = all actions)
-            
+
         Returns:
             True if access revoked
         """
@@ -299,10 +297,10 @@ class AuthorizationChecker:
     def get_user_role(self, user_id: str) -> Role:
         """
         Get user's role.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             User's role
         """
@@ -324,10 +322,10 @@ class AuthorizationChecker:
     def get_user_scopes(self, user_id: str) -> List[str]:
         """
         Get user's permission scopes based on role.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             List of permission scopes
         """
@@ -338,11 +336,11 @@ class AuthorizationChecker:
     def assign_role(self, user_id: str, role: Role) -> bool:
         """
         Assign role to user.
-        
+
         Args:
             user_id: User identifier
             role: Role to assign
-            
+
         Returns:
             True if role assigned
         """
@@ -405,10 +403,10 @@ class AuthorizationChecker:
 def get_scopes_for_role(role: Role) -> List[str]:
     """
     Get permission scopes for a role.
-    
+
     Args:
         role: User role
-        
+
     Returns:
         List of permission scope strings
     """
@@ -419,10 +417,10 @@ def get_scopes_for_role(role: Role) -> List[str]:
 def validate_scopes(scopes: List[str]) -> bool:
     """
     Validate that all scopes are valid.
-    
+
     Args:
         scopes: List of scope strings
-        
+
     Returns:
         True if all scopes are valid
     """

@@ -25,7 +25,7 @@ class JWTManager:
     def __init__(self, redis_client: Optional[Redis] = None):
         """
         Initialize JWT manager.
-        
+
         Args:
             redis_client: Redis client for token blacklist (optional)
         """
@@ -43,12 +43,12 @@ class JWTManager:
     ) -> str:
         """
         Create JWT access token with user claims and scopes.
-        
+
         Args:
             user_id: User identifier
             scopes: List of permission scopes
             expires_delta: Custom expiration time (optional)
-            
+
         Returns:
             Encoded JWT token string
         """
@@ -73,10 +73,10 @@ class JWTManager:
     def create_refresh_token(self, user_id: str) -> str:
         """
         Create long-lived refresh token.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             Encoded JWT refresh token
         """
@@ -97,13 +97,13 @@ class JWTManager:
     def verify_token(self, token: str) -> Dict[str, Any]:
         """
         Verify and decode JWT token.
-        
+
         Args:
             token: JWT token string
-            
+
         Returns:
             Decoded token payload
-            
+
         Raises:
             InvalidTokenError: If token is invalid or expired
         """
@@ -129,13 +129,13 @@ class JWTManager:
     def refresh_access_token(self, refresh_token: str) -> str:
         """
         Generate new access token from refresh token.
-        
+
         Args:
             refresh_token: Valid refresh token
-            
+
         Returns:
             New access token
-            
+
         Raises:
             InvalidTokenError: If refresh token is invalid
         """
@@ -164,10 +164,10 @@ class JWTManager:
     def revoke_token(self, token: str) -> bool:
         """
         Revoke a token by adding it to blacklist.
-        
+
         Args:
             token: Token to revoke
-            
+
         Returns:
             True if successfully revoked
         """
@@ -214,7 +214,7 @@ class APIKeyManager:
     def __init__(self, db_connection):
         """
         Initialize API key manager.
-        
+
         Args:
             db_connection: Database connection for storing API keys
         """
@@ -233,14 +233,14 @@ class APIKeyManager:
     ) -> Tuple[str, str]:
         """
         Generate API key and return (key_id, secret).
-        
+
         Args:
             user_id: User identifier
             name: Descriptive name for the key
             scopes: List of permission scopes
             environment: 'live' or 'test'
             expires_at: Optional expiration date
-            
+
         Returns:
             Tuple of (key_id, api_key_secret)
         """
@@ -271,22 +271,22 @@ class APIKeyManager:
     def verify_api_key(self, api_key: str) -> Dict[str, Any]:
         """
         Verify API key and return user claims.
-        
+
         Args:
             api_key: API key string
-            
+
         Returns:
             Dictionary with user_id, scopes, and metadata
-            
+
         Raises:
             AuthenticationError: If API key is invalid or expired
         """
         # Extract secret from API key
         if api_key.startswith(self.key_prefix_live):
-            secret = api_key[len(self.key_prefix_live):]
+            secret = api_key[len(self.key_prefix_live) :]
             environment = "live"
         elif api_key.startswith(self.key_prefix_test):
-            secret = api_key[len(self.key_prefix_test):]
+            secret = api_key[len(self.key_prefix_test) :]
             environment = "test"
         else:
             raise AuthenticationError("Invalid API key format")
@@ -319,10 +319,10 @@ class APIKeyManager:
     def revoke_api_key(self, key_id: str) -> bool:
         """
         Revoke an API key.
-        
+
         Args:
             key_id: API key ID to revoke
-            
+
         Returns:
             True if successfully revoked
         """
@@ -341,10 +341,10 @@ class APIKeyManager:
     def list_api_keys(self, user_id: str) -> List[Dict[str, Any]]:
         """
         List all API keys for a user.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             List of API key metadata (without secrets)
         """
@@ -362,26 +362,28 @@ class APIKeyManager:
 
         keys = []
         for row in cursor.fetchall():
-            keys.append({
-                "key_id": row[0],
-                "name": row[1],
-                "scopes": row[2],
-                "environment": row[3],
-                "created_at": row[4],
-                "last_used_at": row[5],
-                "expires_at": row[6],
-                "revoked": row[7],
-            })
+            keys.append(
+                {
+                    "key_id": row[0],
+                    "name": row[1],
+                    "scopes": row[2],
+                    "environment": row[3],
+                    "created_at": row[4],
+                    "last_used_at": row[5],
+                    "expires_at": row[6],
+                    "revoked": row[7],
+                }
+            )
 
         return keys
 
     def rotate_api_key(self, key_id: str) -> Tuple[str, str]:
         """
         Rotate an API key (revoke old, create new with same permissions).
-        
+
         Args:
             key_id: API key ID to rotate
-            
+
         Returns:
             Tuple of (new_key_id, new_api_key_secret)
         """

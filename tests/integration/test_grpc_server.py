@@ -4,27 +4,28 @@ Tests for all 8 gRPC RPC methods with mocked REST handlers
 """
 
 import json
-import pytest
-from uuid import uuid4
 from unittest.mock import Mock, patch
+from uuid import uuid4
+
 import grpc
+import pytest
 
 from bob.api import bob_pb2, bob_pb2_grpc
 from bob.api.models import (
-    SearchResponse,
-    SearchResult,
-    StackTraceResponse,
-    StackFrame,
-    DependencyGraphResponse,
-    DependencyEdge,
+    BatchResponse,
     BlastRadiusResponse,
-    ImpactedFile,
+    ChangedFile,
+    CommitDiffResponse,
+    DependencyEdge,
+    DependencyGraphResponse,
     FileResponse,
     FileSymbol,
-    CommitDiffResponse,
-    ChangedFile,
     HealthResponse,
-    BatchResponse,
+    ImpactedFile,
+    SearchResponse,
+    SearchResult,
+    StackFrame,
+    StackTraceResponse,
     SubQueryResult,
 )
 from bob.config import get_settings
@@ -49,11 +50,13 @@ def mock_gateway():
     """Mock query gateway"""
     with patch("bob.api.grpc_server.get_gateway") as mock:
         gateway = Mock()
-        gateway.verify_token = Mock(return_value={
-            "repo_id": str(uuid4()),
-            "org_id": "test_org",
-            "exp": 9999999999,
-        })
+        gateway.verify_token = Mock(
+            return_value={
+                "repo_id": str(uuid4()),
+                "org_id": "test_org",
+                "exp": 9999999999,
+            }
+        )
         gateway.check_rate_limit = Mock()
         mock.return_value = gateway
         yield gateway
@@ -72,16 +75,16 @@ async def grpc_stub():
     Starts gRPC server explicitly and yields a gRPC stub connected to it.
     """
     from bob.api.grpc_server import GRPCServer
-    
+
     # Start the server on the test port
     server = GRPCServer(host="127.0.0.1", port=settings.grpc_port)
     await server.start()
-    
+
     channel = grpc.aio.insecure_channel(f"127.0.0.1:{settings.grpc_port}")
     stub = bob_pb2_grpc.BobServiceStub(channel)
-    
+
     yield stub
-    
+
     await channel.close()
     await server.stop(grace=0.1)
 
@@ -120,10 +123,7 @@ class TestGRPCServer:
 
         metadata = [("authorization", mock_auth_token)]
         request = bob_pb2.SearchRequest(
-            repo_id=mock_repo_id,
-            query="auth functions",
-            k=5,
-            filter={"language": "python"}
+            repo_id=mock_repo_id, query="auth functions", k=5, filter={"language": "python"}
         )
 
         response = await grpc_stub.Search(request, metadata=metadata)
@@ -138,17 +138,14 @@ class TestGRPCServer:
     async def test_search_unauthorized(self, mock_search, mock_gateway, grpc_stub):
         """Test Search RPC fails if unauthorized"""
         from bob.exceptions import AuthenticationError
+
         mock_gateway.verify_token.side_effect = AuthenticationError("Unauthorized")
 
-        request = bob_pb2.SearchRequest(
-            repo_id=str(uuid4()),
-            query="test",
-            k=5
-        )
+        request = bob_pb2.SearchRequest(repo_id=str(uuid4()), query="test", k=5)
 
         with pytest.raises(grpc.RpcError) as exc_info:
             await grpc_stub.Search(request)
-        
+
         assert exc_info.value.code() == grpc.StatusCode.UNAUTHENTICATED
         assert "Unauthorized" in exc_info.value.details()
 
@@ -156,18 +153,15 @@ class TestGRPCServer:
     async def test_search_rate_limited(self, mock_search, mock_gateway, mock_auth_token, grpc_stub):
         """Test Search RPC fails if rate limit exceeded"""
         from bob.exceptions import RateLimitExceededError
+
         mock_gateway.check_rate_limit.side_effect = RateLimitExceededError("Rate limit exceeded")
 
-        request = bob_pb2.SearchRequest(
-            repo_id=str(uuid4()),
-            query="test",
-            k=5
-        )
+        request = bob_pb2.SearchRequest(repo_id=str(uuid4()), query="test", k=5)
 
         metadata = [("authorization", mock_auth_token)]
         with pytest.raises(grpc.RpcError) as exc_info:
             await grpc_stub.Search(request, metadata=metadata)
-        
+
         assert exc_info.value.code() == grpc.StatusCode.RESOURCE_EXHAUSTED
         assert "Rate limit exceeded" in exc_info.value.details()
 
@@ -200,8 +194,7 @@ class TestGRPCServer:
 
         metadata = [("authorization", mock_auth_token)]
         request = bob_pb2.StackTraceRequest(
-            repo_id=mock_repo_id,
-            trace='File "app.py", line 42, in handler\n    process_request()'
+            repo_id=mock_repo_id, trace='File "app.py", line 42, in handler\n    process_request()'
         )
 
         response = await grpc_stub.ResolveStackTrace(request, metadata=metadata)
@@ -234,10 +227,7 @@ class TestGRPCServer:
 
         metadata = [("authorization", mock_auth_token)]
         request = bob_pb2.DependencyGraphRequest(
-            repo_id=mock_repo_id,
-            file_path="src/main.py",
-            hops=3,
-            direction="both"
+            repo_id=mock_repo_id, file_path="src/main.py", hops=3, direction="both"
         )
 
         response = await grpc_stub.GetDependencyGraph(request, metadata=metadata)
@@ -274,10 +264,7 @@ class TestGRPCServer:
         )
 
         metadata = [("authorization", mock_auth_token)]
-        request = bob_pb2.BlastRadiusRequest(
-            repo_id=mock_repo_id,
-            files=["src/main.py"]
-        )
+        request = bob_pb2.BlastRadiusRequest(repo_id=mock_repo_id, files=["src/main.py"])
 
         response = await grpc_stub.ComputeBlastRadius(request, metadata=metadata)
 
@@ -302,19 +289,14 @@ class TestGRPCServer:
             content="def process(): pass",
             language="python",
             total_lines=1,
-            symbols=[
-                FileSymbol(name="process", type="function", start_line=5, end_line=12)
-            ],
+            symbols=[FileSymbol(name="process", type="function", start_line=5, end_line=12)],
             imports=["os"],
             last_modified="2024-02-01T12:00:00Z",
             repo_id=mock_repo_id,
         )
 
         metadata = [("authorization", mock_auth_token)]
-        request = bob_pb2.FileRequest(
-            repo_id=mock_repo_id,
-            file_path="src/main.py"
-        )
+        request = bob_pb2.FileRequest(repo_id=mock_repo_id, file_path="src/main.py")
 
         response = await grpc_stub.GetFile(request, metadata=metadata)
 
@@ -352,10 +334,7 @@ class TestGRPCServer:
         )
 
         metadata = [("authorization", mock_auth_token)]
-        request = bob_pb2.CommitDiffRequest(
-            repo_id=mock_repo_id,
-            commit_sha="abcdef123456"
-        )
+        request = bob_pb2.CommitDiffRequest(repo_id=mock_repo_id, commit_sha="abcdef123456")
 
         response = await grpc_stub.GetCommitDiff(request, metadata=metadata)
 
@@ -374,7 +353,7 @@ class TestGRPCServer:
                 "postgres": "healthy",
                 "redis": "healthy",
                 "neo4j": "healthy",
-                "weaviate": "healthy"
+                "weaviate": "healthy",
             },
             metrics={},
             repos_indexed=0,
@@ -405,10 +384,7 @@ class TestGRPCServer:
                 SubQueryResult(
                     query_id="q1",
                     success=True,
-                    result={
-                        "file_path": "src/main.py",
-                        "content": "def test(): pass"
-                    },
+                    result={"file_path": "src/main.py", "content": "def test(): pass"},
                     error=None,
                     execution_time_ms=1.5,
                 )
@@ -425,10 +401,7 @@ class TestGRPCServer:
                 bob_pb2.SubQuery(
                     query_id="q1",
                     query_type="file",
-                    params_json=json.dumps({
-                        "repo_id": mock_repo_id,
-                        "file_path": "src/main.py"
-                    })
+                    params_json=json.dumps({"repo_id": mock_repo_id, "file_path": "src/main.py"}),
                 )
             ]
         )
@@ -440,7 +413,7 @@ class TestGRPCServer:
         assert len(response.results) == 1
         assert response.results[0].query_id == "q1"
         assert response.results[0].success is True
-        
+
         result_data = json.loads(response.results[0].result_json)
         assert result_data["file_path"] == "src/main.py"
         assert result_data["content"] == "def test(): pass"

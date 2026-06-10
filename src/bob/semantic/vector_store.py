@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class VectorStore:
     """
     Manages vector embeddings in Weaviate.
-    
+
     Responsibilities:
     - Create/update CodeUnit schema
     - Batch upsert for code unit objects
@@ -54,10 +54,14 @@ class VectorStore:
             # Connect to Weaviate
             if self.settings.weaviate_api_key:
                 self._client = weaviate.connect_to_custom(
-                    http_host=self.settings.weaviate_url.replace("http://", "").replace("https://", ""),
+                    http_host=self.settings.weaviate_url.replace("http://", "").replace(
+                        "https://", ""
+                    ),
                     http_port=8080,
                     http_secure=False,
-                    grpc_host=self.settings.weaviate_url.replace("http://", "").replace("https://", ""),
+                    grpc_host=self.settings.weaviate_url.replace("http://", "").replace(
+                        "https://", ""
+                    ),
                     grpc_port=50051,
                     grpc_secure=False,
                     auth_credentials=weaviate.auth.AuthApiKey(self.settings.weaviate_api_key),
@@ -68,16 +72,16 @@ class VectorStore:
                     port=8080,
                     grpc_port=50051,
                 )
-            
+
             # Verify connection
             if not self._client.is_ready():
                 raise VectorStoreConnectionError("Weaviate is not ready")
-            
+
             logger.info("Connected to Weaviate")
-            
+
             # Create schema if it doesn't exist
             self._create_schema()
-        
+
         except Exception as e:
             raise VectorStoreConnectionError(
                 f"Failed to connect to Weaviate: {str(e)}",
@@ -96,7 +100,7 @@ class VectorStore:
         if self._client.collections.exists(self._collection_name):
             logger.info(f"Collection {self._collection_name} already exists")
             return
-        
+
         # Create collection with schema
         try:
             self._client.collections.create(
@@ -182,9 +186,9 @@ class VectorStore:
                     ),
                 ],
             )
-            
+
             logger.info(f"Created collection {self._collection_name}")
-        
+
         except WeaviateBaseError as e:
             logger.warning(f"Failed to create schema: {e}")
 
@@ -196,29 +200,29 @@ class VectorStore:
     ) -> int:
         """
         Upsert embeddings in batches.
-        
+
         Args:
             repo_id: Repository UUID
             embeddings: List of embeddings to upsert
             language: Programming language
-            
+
         Returns:
             Number of embeddings upserted
         """
         if not embeddings:
             return 0
-        
+
         assert self._client is not None, "Client not connected"
         collection = self._client.collections.get(self._collection_name)
-        
+
         # Batch upsert
         total_upserted = 0
-        
+
         with collection.batch.dynamic() as batch:
             for embedding in embeddings:
                 # Create unique ID based on repo, file, symbol, and line
                 object_id = f"{repo_id}:{embedding.chunk.file_path}:{embedding.chunk.symbol_name}:{embedding.chunk.start_line}"
-                
+
                 properties = {
                     "repo_id": str(repo_id),
                     "file_path": embedding.chunk.file_path,
@@ -231,14 +235,14 @@ class VectorStore:
                     "embedding_model": embedding.model,
                     "indexed_at": embedding.timestamp,
                 }
-                
+
                 batch.add_object(
                     properties=properties,
                     vector=embedding.vector,
                     uuid=weaviate.util.generate_uuid5(object_id),
                 )
                 total_upserted += 1
-        
+
         logger.info(f"Upserted {total_upserted} embeddings for repo {repo_id}")
         return total_upserted
 
@@ -255,7 +259,7 @@ class VectorStore:
     ) -> list[dict[str, Any]]:
         """
         Perform nearest-neighbor search with optional filters.
-        
+
         Args:
             query_vector: Query embedding vector
             repo_id: Optional repository filter
@@ -264,12 +268,12 @@ class VectorStore:
             language: Optional language filter
             limit: Maximum number of results
             min_certainty: Minimum certainty score (0.0-1.0)
-            
+
         Returns:
             List of search results with metadata
         """
         collection = self._client.collections.get(self._collection_name)
-        
+
         # Build filters
         filters = []
         if repo_id:
@@ -280,14 +284,14 @@ class VectorStore:
             filters.append(Filter.by_property("symbol_type").equal(symbol_type))
         if language:
             filters.append(Filter.by_property("language").equal(language))
-        
+
         # Combine filters with AND
         combined_filter = None
         if filters:
             combined_filter = filters[0]
             for f in filters[1:]:
                 combined_filter = combined_filter & f
-        
+
         # Perform search
         try:
             # Weaviate v4 Python client passes offset to GraphQL
@@ -298,29 +302,31 @@ class VectorStore:
                 filters=combined_filter,
                 return_metadata=MetadataQuery(certainty=True, distance=True),
             )
-            
+
             results = []
             for obj in response.objects:
                 # Filter by certainty
                 if obj.metadata.certainty and obj.metadata.certainty < min_certainty:
                     continue
-                
-                results.append({
-                    "repo_id": obj.properties.get("repo_id"),
-                    "file_path": obj.properties.get("file_path"),
-                    "symbol_name": obj.properties.get("symbol_name"),
-                    "symbol_type": obj.properties.get("symbol_type"),
-                    "content": obj.properties.get("content"),
-                    "start_line": obj.properties.get("start_line"),
-                    "end_line": obj.properties.get("end_line"),
-                    "language": obj.properties.get("language"),
-                    "certainty": obj.metadata.certainty,
-                    "distance": obj.metadata.distance,
-                })
-            
+
+                results.append(
+                    {
+                        "repo_id": obj.properties.get("repo_id"),
+                        "file_path": obj.properties.get("file_path"),
+                        "symbol_name": obj.properties.get("symbol_name"),
+                        "symbol_type": obj.properties.get("symbol_type"),
+                        "content": obj.properties.get("content"),
+                        "start_line": obj.properties.get("start_line"),
+                        "end_line": obj.properties.get("end_line"),
+                        "language": obj.properties.get("language"),
+                        "certainty": obj.metadata.certainty,
+                        "distance": obj.metadata.distance,
+                    }
+                )
+
             logger.info(f"Found {len(results)} results for semantic search")
             return results
-        
+
         except WeaviateBaseError as e:
             raise VectorStoreError(
                 f"Search failed: {str(e)}",
@@ -338,7 +344,7 @@ class VectorStore:
     ) -> list[dict[str, Any]]:
         """
         Perform hybrid search (BM25 + semantic).
-        
+
         Args:
             query_text: Query text
             repo_id: Optional repository filter
@@ -346,12 +352,12 @@ class VectorStore:
             symbol_type: Optional symbol type filter
             language: Optional language filter
             limit: Maximum number of results
-            
+
         Returns:
             List of search results with metadata
         """
         collection = self._client.collections.get(self._collection_name)
-        
+
         # Build filters
         filters = []
         if repo_id:
@@ -362,14 +368,14 @@ class VectorStore:
             filters.append(Filter.by_property("symbol_type").equal(symbol_type))
         if language:
             filters.append(Filter.by_property("language").equal(language))
-        
+
         # Combine filters
         combined_filter = None
         if filters:
             combined_filter = filters[0]
             for f in filters[1:]:
                 combined_filter = combined_filter & f
-        
+
         # Perform hybrid search
         try:
             response = collection.query.hybrid(
@@ -378,24 +384,26 @@ class VectorStore:
                 filters=combined_filter,
                 return_metadata=MetadataQuery(score=True),
             )
-            
+
             results = []
             for obj in response.objects:
-                results.append({
-                    "repo_id": obj.properties.get("repo_id"),
-                    "file_path": obj.properties.get("file_path"),
-                    "symbol_name": obj.properties.get("symbol_name"),
-                    "symbol_type": obj.properties.get("symbol_type"),
-                    "content": obj.properties.get("content"),
-                    "start_line": obj.properties.get("start_line"),
-                    "end_line": obj.properties.get("end_line"),
-                    "language": obj.properties.get("language"),
-                    "score": obj.metadata.score,
-                })
-            
+                results.append(
+                    {
+                        "repo_id": obj.properties.get("repo_id"),
+                        "file_path": obj.properties.get("file_path"),
+                        "symbol_name": obj.properties.get("symbol_name"),
+                        "symbol_type": obj.properties.get("symbol_type"),
+                        "content": obj.properties.get("content"),
+                        "start_line": obj.properties.get("start_line"),
+                        "end_line": obj.properties.get("end_line"),
+                        "language": obj.properties.get("language"),
+                        "score": obj.metadata.score,
+                    }
+                )
+
             logger.info(f"Found {len(results)} results for hybrid search")
             return results
-        
+
         except WeaviateBaseError as e:
             raise VectorStoreError(
                 f"Hybrid search failed: {str(e)}",
@@ -405,27 +413,27 @@ class VectorStore:
     def invalidate_file(self, repo_id: UUID, file_path: str) -> int:
         """
         Invalidate (delete) all embeddings for a file.
-        
+
         Args:
             repo_id: Repository UUID
             file_path: File path
-            
+
         Returns:
             Number of embeddings deleted
         """
         collection = self._client.collections.get(self._collection_name)
-        
+
         try:
             # Delete all objects matching repo_id and file_path
             result = collection.data.delete_many(
                 where=Filter.by_property("repo_id").equal(str(repo_id))
                 & Filter.by_property("file_path").equal(file_path)
             )
-            
-            deleted_count = result.successful if hasattr(result, 'successful') else 0
+
+            deleted_count = result.successful if hasattr(result, "successful") else 0
             logger.info(f"Invalidated {deleted_count} embeddings for {file_path}")
             return deleted_count
-        
+
         except WeaviateBaseError as e:
             raise VectorStoreError(
                 f"Failed to invalidate file: {str(e)}",
@@ -435,25 +443,25 @@ class VectorStore:
     def invalidate_repository(self, repo_id: UUID) -> int:
         """
         Invalidate (delete) all embeddings for a repository.
-        
+
         Args:
             repo_id: Repository UUID
-            
+
         Returns:
             Number of embeddings deleted
         """
         collection = self._client.collections.get(self._collection_name)
-        
+
         try:
             # Delete all objects matching repo_id
             result = collection.data.delete_many(
                 where=Filter.by_property("repo_id").equal(str(repo_id))
             )
-            
-            deleted_count = result.successful if hasattr(result, 'successful') else 0
+
+            deleted_count = result.successful if hasattr(result, "successful") else 0
             logger.info(f"Invalidated {deleted_count} embeddings for repo {repo_id}")
             return deleted_count
-        
+
         except WeaviateBaseError as e:
             raise VectorStoreError(
                 f"Failed to invalidate repository: {str(e)}",
@@ -463,15 +471,15 @@ class VectorStore:
     def get_stats(self, repo_id: UUID | None = None) -> dict[str, Any]:
         """
         Get statistics about stored embeddings.
-        
+
         Args:
             repo_id: Optional repository filter
-            
+
         Returns:
             Dictionary with statistics
         """
         collection = self._client.collections.get(self._collection_name)
-        
+
         try:
             # Get total count
             if repo_id:
@@ -481,15 +489,15 @@ class VectorStore:
                 )
             else:
                 response = collection.aggregate.over_all(total_count=True)
-            
+
             stats = {
                 "total_embeddings": response.total_count if response.total_count else 0,
                 "repo_id": str(repo_id) if repo_id else "all",
             }
-            
+
             logger.info(f"Vector store stats: {stats}")
             return stats
-        
+
         except WeaviateBaseError as e:
             logger.warning(f"Failed to get stats: {e}")
             return {"total_embeddings": 0, "repo_id": str(repo_id) if repo_id else "all"}

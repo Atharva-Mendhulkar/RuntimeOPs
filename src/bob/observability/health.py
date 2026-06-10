@@ -88,9 +88,7 @@ class HealthCheckManager:
             del self.checks[name]
             logger.info("health_check_unregistered", check_name=name)
 
-    async def run_checks(
-        self, timeout: float = 5.0
-    ) -> Dict[str, Any]:
+    async def run_checks(self, timeout: float = 5.0) -> Dict[str, Any]:
         """
         Run all registered health checks.
 
@@ -106,9 +104,7 @@ class HealthCheckManager:
         for name, check_func in self.checks.items():
             try:
                 # Run check with timeout
-                result = await asyncio.wait_for(
-                    check_func(), timeout=timeout
-                )
+                result = await asyncio.wait_for(check_func(), timeout=timeout)
 
                 if not isinstance(result, HealthCheckResult):
                     result = HealthCheckResult(

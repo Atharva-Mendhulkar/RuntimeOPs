@@ -3,25 +3,25 @@ Integration tests for Bob agent integration
 Tests the complete flow of agent tool usage
 """
 
-import pytest
 from uuid import uuid4
 
+import pytest
+
 from bob.tools.client import BobClient
-from bob.tools.langgraph_integration import (
-    create_bob_tools,
-    AgentToolset,
-    BobStateManager,
-    create_tool_node,
-)
 from bob.tools.event_bus import (
+    BobEvent,
     EventEmitter,
     EventSubscriber,
     EventType,
-    BobEvent,
     IncidentEventHandler,
     WebhookEventHandler,
 )
-
+from bob.tools.langgraph_integration import (
+    AgentToolset,
+    BobStateManager,
+    create_bob_tools,
+    create_tool_node,
+)
 
 # ============================================================================
 # Test Fixtures
@@ -57,13 +57,13 @@ def bob_client():
 def test_create_bob_tools():
     """Test creating all Bob tools for LangGraph"""
     tools = create_bob_tools()
-    
+
     assert len(tools) == 10
     assert all("name" in tool for tool in tools)
     assert all("description" in tool for tool in tools)
     assert all("parameters" in tool for tool in tools)
     assert all("function" in tool for tool in tools)
-    
+
     # Check tool names
     tool_names = {tool["name"] for tool in tools}
     expected_names = {
@@ -89,7 +89,7 @@ def test_create_bob_tools():
 def test_root_cause_agent_toolset():
     """Test Root Cause Agent toolset"""
     tools = AgentToolset.root_cause_agent_tools()
-    
+
     assert len(tools) == 3
     tool_names = {tool["name"] for tool in tools}
     assert tool_names == {
@@ -102,7 +102,7 @@ def test_root_cause_agent_toolset():
 def test_patch_agent_toolset():
     """Test Patch Agent toolset"""
     tools = AgentToolset.patch_agent_tools()
-    
+
     assert len(tools) == 3
     tool_names = {tool["name"] for tool in tools}
     assert tool_names == {
@@ -115,7 +115,7 @@ def test_patch_agent_toolset():
 def test_test_agent_toolset():
     """Test Test Agent toolset"""
     tools = AgentToolset.test_agent_tools()
-    
+
     assert len(tools) == 2
     tool_names = {tool["name"] for tool in tools}
     assert tool_names == {
@@ -127,7 +127,7 @@ def test_test_agent_toolset():
 def test_dependency_agent_toolset():
     """Test Dependency Agent toolset"""
     tools = AgentToolset.dependency_agent_tools()
-    
+
     assert len(tools) == 2
     tool_names = {tool["name"] for tool in tools}
     assert tool_names == {
@@ -139,7 +139,7 @@ def test_dependency_agent_toolset():
 def test_risk_agent_toolset():
     """Test Risk Agent toolset"""
     tools = AgentToolset.risk_agent_tools()
-    
+
     assert len(tools) == 2
     tool_names = {tool["name"] for tool in tools}
     assert tool_names == {
@@ -151,7 +151,7 @@ def test_risk_agent_toolset():
 def test_incident_orchestrator_toolset():
     """Test Incident Orchestrator toolset"""
     tools = AgentToolset.incident_orchestrator_tools()
-    
+
     assert len(tools) == 2
     tool_names = {tool["name"] for tool in tools}
     assert tool_names == {
@@ -168,12 +168,12 @@ def test_incident_orchestrator_toolset():
 def test_state_manager_create_snapshot(incident_id, repo_id):
     """Test creating state snapshot"""
     manager = BobStateManager()
-    
+
     snapshot_id = manager.create_snapshot(incident_id, repo_id)
-    
+
     assert snapshot_id == f"{incident_id}:{repo_id}"
     assert snapshot_id in manager.state_snapshots
-    
+
     snapshot = manager.get_snapshot(snapshot_id)
     assert snapshot is not None
     assert snapshot["incident_id"] == incident_id
@@ -184,7 +184,7 @@ def test_state_manager_store_response(incident_id, repo_id):
     """Test storing Bob response in state"""
     manager = BobStateManager()
     snapshot_id = manager.create_snapshot(incident_id, repo_id)
-    
+
     # Store response
     response = {"file_path": "src/main.py", "confidence": 0.95}
     manager.store_response(
@@ -193,7 +193,7 @@ def test_state_manager_store_response(incident_id, repo_id):
         response=response,
         agent_name="root_cause_agent",
     )
-    
+
     # Retrieve responses
     responses = manager.get_responses(snapshot_id, "bob_semantic_search")
     assert len(responses) == 1
@@ -205,11 +205,11 @@ def test_state_manager_get_all_responses(incident_id, repo_id):
     """Test getting all responses from snapshot"""
     manager = BobStateManager()
     snapshot_id = manager.create_snapshot(incident_id, repo_id)
-    
+
     # Store multiple responses
     manager.store_response(snapshot_id, "bob_semantic_search", {"data": 1}, "agent1")
     manager.store_response(snapshot_id, "bob_get_file_content", {"data": 2}, "agent2")
-    
+
     # Get all responses
     all_responses = manager.get_responses(snapshot_id)
     assert len(all_responses) == 2
@@ -219,11 +219,11 @@ def test_state_manager_clear_snapshot(incident_id, repo_id):
     """Test clearing state snapshot"""
     manager = BobStateManager()
     snapshot_id = manager.create_snapshot(incident_id, repo_id)
-    
+
     assert snapshot_id in manager.state_snapshots
-    
+
     manager.clear_snapshot(snapshot_id)
-    
+
     assert snapshot_id not in manager.state_snapshots
     assert manager.get_snapshot(snapshot_id) is None
 
@@ -246,7 +246,7 @@ def test_event_creation(repo_id):
         repo_id=repo_id,
         data={"files_indexed": 100},
     )
-    
+
     assert event.event_type == EventType.INDEX_COMPLETE
     assert event.repo_id == repo_id
     assert event.data["files_indexed"] == 100
@@ -256,7 +256,7 @@ def test_event_creation(repo_id):
 def test_event_emitter_emit_index_complete(repo_id):
     """Test emitting index complete event"""
     emitter = EventEmitter(backend="redis")
-    
+
     # This will fail without Redis, but tests the interface
     try:
         emitter.emit_index_complete(
@@ -278,12 +278,12 @@ def test_event_subscriber_initialization():
 def test_event_subscriber_register_handler():
     """Test registering event handler"""
     subscriber = EventSubscriber(backend="redis")
-    
+
     def handler(event: BobEvent):
         pass
-    
+
     subscriber.register_handler(EventType.INCIDENT_INTAKE, handler)
-    
+
     assert EventType.INCIDENT_INTAKE in subscriber._handlers
     assert len(subscriber._handlers[EventType.INCIDENT_INTAKE]) == 1
 
@@ -315,15 +315,15 @@ def test_root_cause_agent_workflow(repo_id):
     """
     # This is a mock workflow test
     # In real integration, would call actual Bob API
-    
+
     tools = AgentToolset.root_cause_agent_tools()
     assert len(tools) == 3
-    
+
     # Simulate agent using tools
     tool_names_used = []
     for tool in tools:
         tool_names_used.append(tool["name"])
-    
+
     assert "bob_resolve_stack_trace" in tool_names_used
     assert "bob_semantic_search" in tool_names_used
     assert "bob_get_commit_diff" in tool_names_used
@@ -339,7 +339,7 @@ def test_patch_agent_workflow(repo_id):
     """
     tools = AgentToolset.patch_agent_tools()
     assert len(tools) == 3
-    
+
     tool_names = {tool["name"] for tool in tools}
     assert "bob_get_file_content" in tool_names
     assert "bob_get_dependency_graph" in tool_names
@@ -355,10 +355,10 @@ def test_incident_orchestration_workflow(incident_id, repo_id):
     3. Clear snapshot on resolution
     """
     manager = BobStateManager()
-    
+
     # Create snapshot
     snapshot_id = manager.create_snapshot(incident_id, repo_id)
-    
+
     # Simulate Root Cause Agent
     manager.store_response(
         snapshot_id,
@@ -366,7 +366,7 @@ def test_incident_orchestration_workflow(incident_id, repo_id):
         {"frames": []},
         "root_cause_agent",
     )
-    
+
     # Simulate Patch Agent
     manager.store_response(
         snapshot_id,
@@ -374,11 +374,11 @@ def test_incident_orchestration_workflow(incident_id, repo_id):
         {"content": "..."},
         "patch_agent",
     )
-    
+
     # Verify responses stored
     all_responses = manager.get_responses(snapshot_id)
     assert len(all_responses) == 2
-    
+
     # Clear on resolution
     manager.clear_snapshot(snapshot_id)
     assert manager.get_snapshot(snapshot_id) is None
@@ -392,16 +392,16 @@ def test_incident_orchestration_workflow(incident_id, repo_id):
 def test_tool_parameters_validation():
     """Test that all tools have proper parameter schemas"""
     tools = create_bob_tools()
-    
+
     for tool in tools:
         params = tool["parameters"]
-        
+
         # Check required structure
         assert "type" in params
         assert params["type"] == "object"
         assert "properties" in params
         assert "required" in params
-        
+
         # Check all required params are in properties
         for required_param in params["required"]:
             assert required_param in params["properties"]
@@ -410,7 +410,7 @@ def test_tool_parameters_validation():
 def test_tool_descriptions():
     """Test that all tools have meaningful descriptions"""
     tools = create_bob_tools()
-    
+
     for tool in tools:
         assert len(tool["description"]) > 50  # Meaningful description
         assert "." in tool["description"]  # Proper sentence
@@ -425,11 +425,11 @@ def test_tool_descriptions():
 def test_state_manager_handles_missing_snapshot():
     """Test state manager handles missing snapshot gracefully"""
     manager = BobStateManager()
-    
+
     # Try to get non-existent snapshot
     snapshot = manager.get_snapshot("nonexistent")
     assert snapshot is None
-    
+
     # Try to get responses from non-existent snapshot
     responses = manager.get_responses("nonexistent")
     assert responses == []
@@ -439,14 +439,14 @@ def test_state_manager_handles_missing_snapshot():
 def test_event_handler_error_resilience(repo_id):
     """Test event handlers are resilient to errors"""
     handler = IncidentEventHandler()
-    
+
     # Create malformed event
     event = BobEvent(
         event_type=EventType.INCIDENT_INTAKE,
         repo_id=repo_id,
         data={},  # Missing incident_id
     )
-    
+
     # Should not raise exception
     try:
         handler.handle_incident_intake(event)

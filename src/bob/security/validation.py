@@ -46,13 +46,13 @@ class QueryValidator:
     def validate_search_query(cls, query: str) -> str:
         """
         Validate and sanitize search queries.
-        
+
         Args:
             query: Search query string
-            
+
         Returns:
             Sanitized query string
-            
+
         Raises:
             InvalidQueryError: If query is invalid
         """
@@ -68,16 +68,12 @@ class QueryValidator:
         # Check for SQL injection patterns
         for pattern in cls.SQL_INJECTION_PATTERNS:
             if re.search(pattern, query, re.IGNORECASE):
-                raise InvalidQueryError(
-                    "Query contains potentially dangerous SQL patterns"
-                )
+                raise InvalidQueryError("Query contains potentially dangerous SQL patterns")
 
         # Check for script injection
         for pattern in cls.SCRIPT_PATTERNS:
             if re.search(pattern, query, re.IGNORECASE):
-                raise InvalidQueryError(
-                    "Query contains potentially dangerous script patterns"
-                )
+                raise InvalidQueryError("Query contains potentially dangerous script patterns")
 
         # Sanitize: remove control characters
         sanitized = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", query)
@@ -91,13 +87,13 @@ class QueryValidator:
     def validate_file_path(cls, path: str) -> str:
         """
         Validate file paths to prevent directory traversal.
-        
+
         Args:
             path: File path string
-            
+
         Returns:
             Sanitized file path
-            
+
         Raises:
             InvalidQueryError: If path is invalid
         """
@@ -113,9 +109,7 @@ class QueryValidator:
         # Check for path traversal patterns
         for pattern in cls.PATH_TRAVERSAL_PATTERNS:
             if re.search(pattern, path):
-                raise InvalidQueryError(
-                    "File path contains potentially dangerous patterns"
-                )
+                raise InvalidQueryError("File path contains potentially dangerous patterns")
 
         # Must be relative path
         if Path(path).is_absolute():
@@ -137,13 +131,13 @@ class QueryValidator:
     def validate_repo_id(cls, repo_id: str) -> str:
         """
         Validate repository ID format.
-        
+
         Args:
             repo_id: Repository identifier (owner/repo or UUID)
-            
+
         Returns:
             Validated repo ID
-            
+
         Raises:
             InvalidQueryError: If repo ID is invalid
         """
@@ -182,9 +176,7 @@ class QueryValidator:
 
             return repo_id
 
-        raise InvalidQueryError(
-            "Repository ID must be in format 'owner/repo' or valid UUID"
-        )
+        raise InvalidQueryError("Repository ID must be in format 'owner/repo' or valid UUID")
 
     @classmethod
     def _is_valid_identifier(cls, identifier: str) -> bool:
@@ -201,14 +193,14 @@ class RequestValidator:
     def validate_pagination(page: int, page_size: int) -> Tuple[int, int]:
         """
         Validate pagination parameters.
-        
+
         Args:
             page: Page number (1-indexed)
             page_size: Items per page
-            
+
         Returns:
             Tuple of (validated_page, validated_page_size)
-            
+
         Raises:
             InvalidQueryError: If parameters are invalid
         """
@@ -232,14 +224,14 @@ class RequestValidator:
     def validate_batch_size(size: int, max_size: int = 50) -> int:
         """
         Validate batch request sizes.
-        
+
         Args:
             size: Batch size
             max_size: Maximum allowed batch size
-            
+
         Returns:
             Validated batch size
-            
+
         Raises:
             InvalidQueryError: If size is invalid
         """
@@ -255,14 +247,14 @@ class RequestValidator:
     def validate_hops(hops: int, max_hops: int = 10) -> int:
         """
         Validate graph traversal hops.
-        
+
         Args:
             hops: Number of hops
             max_hops: Maximum allowed hops
-            
+
         Returns:
             Validated hops
-            
+
         Raises:
             InvalidQueryError: If hops is invalid
         """
@@ -278,14 +270,14 @@ class RequestValidator:
     def validate_k(k: int, max_k: int = 50) -> int:
         """
         Validate search result count (k).
-        
+
         Args:
             k: Number of results
             max_k: Maximum allowed results
-            
+
         Returns:
             Validated k
-            
+
         Raises:
             InvalidQueryError: If k is invalid
         """
@@ -301,13 +293,13 @@ class RequestValidator:
     def validate_direction(direction: str) -> str:
         """
         Validate graph traversal direction.
-        
+
         Args:
             direction: Direction string
-            
+
         Returns:
             Validated direction
-            
+
         Raises:
             InvalidQueryError: If direction is invalid
         """
@@ -324,13 +316,13 @@ class RequestValidator:
     def validate_commit_sha(sha: str) -> str:
         """
         Validate git commit SHA.
-        
+
         Args:
             sha: Commit SHA (short or full)
-            
+
         Returns:
             Validated SHA
-            
+
         Raises:
             InvalidQueryError: If SHA is invalid
         """
@@ -426,10 +418,10 @@ class BlastRadiusRequestModel(BaseModel):
 def sanitize_error_message(message: str) -> str:
     """
     Sanitize error messages to prevent information leakage.
-    
+
     Args:
         message: Error message
-        
+
     Returns:
         Sanitized message
     """

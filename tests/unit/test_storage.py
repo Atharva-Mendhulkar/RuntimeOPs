@@ -47,7 +47,7 @@ class TestFileCache:
         """Test cache initialization"""
         cache = FileCache()
         cache.connect()
-        
+
         assert cache._redis_client is not None
         assert cache._cipher is not None
         mock_redis.ping.assert_called_once()
@@ -56,17 +56,17 @@ class TestFileCache:
         """Test cache set and get operations"""
         cache = FileCache()
         cache.connect()
-        
+
         # Mock encrypted data
         mock_fernet.encrypt.return_value = b"encrypted_test_value"
         mock_redis.get.return_value = b"encrypted_test_value"
         mock_fernet.decrypt.return_value = b"test_value"
-        
+
         # Set value
         result = cache.set("file", "test_key", "test_value")
         assert result is True
         mock_redis.setex.assert_called_once()
-        
+
         # Get value
         value = cache.get("file", "test_key")
         assert value == "test_value"
@@ -76,7 +76,7 @@ class TestFileCache:
         """Test cache invalidation"""
         cache = FileCache()
         cache.connect()
-        
+
         result = cache.invalidate("file", "test_key")
         assert result is True
         mock_redis.delete.assert_called_once()
@@ -85,10 +85,10 @@ class TestFileCache:
         """Test pattern-based invalidation"""
         cache = FileCache()
         cache.connect()
-        
+
         mock_redis.keys.return_value = [b"key1", b"key2", b"key3"]
         mock_redis.delete.return_value = 3
-        
+
         count = cache.invalidate_pattern("file", "test_*")
         assert count == 3
         mock_redis.keys.assert_called_once()
@@ -98,19 +98,19 @@ class TestFileCache:
         """Test JSON cache operations"""
         cache = FileCache()
         cache.connect()
-        
+
         test_data = {"key": "value", "number": 42}
         json_str = json.dumps(test_data)
-        
+
         # Mock encryption/decryption
         mock_fernet.encrypt.return_value = b"encrypted_json"
         mock_redis.get.return_value = b"encrypted_json"
         mock_fernet.decrypt.return_value = json_str.encode()
-        
+
         # Set JSON
         result = cache.set_json("file", "test_key", test_data)
         assert result is True
-        
+
         # Get JSON
         retrieved = cache.get_json("file", "test_key")
         assert retrieved == test_data
@@ -119,7 +119,7 @@ class TestFileCache:
         """Test cache statistics"""
         cache = FileCache()
         cache.connect()
-        
+
         mock_redis.dbsize.return_value = 100
         mock_redis.info.return_value = {
             "keyspace_hits": 80,
@@ -127,7 +127,7 @@ class TestFileCache:
             "evicted_keys": 5,
             "expired_keys": 10,
         }
-        
+
         stats = cache.get_stats()
         assert stats["total_keys"] == 100
         assert stats["hits"] == 80
@@ -138,13 +138,13 @@ class TestFileCache:
         """Test cache pre-warming"""
         cache = FileCache()
         cache.connect()
-        
+
         files = {
             "file1.py": "content1",
             "file2.py": "content2",
             "file3.py": "content3",
         }
-        
+
         count = cache.prewarm("repo123", files)
         assert count == 3
         assert mock_redis.setex.call_count == 3
@@ -184,7 +184,7 @@ class TestIndexRegistryManager:
         """Test registry initialization"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         assert registry._engine is not None
         assert registry._session_factory is not None
 
@@ -192,16 +192,16 @@ class TestIndexRegistryManager:
         """Test repository creation"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         # Mock repository object
         mock_repo = MagicMock()
         mock_repo.repo_id = uuid4()
         mock_session.add = MagicMock()
         mock_session.commit = MagicMock()
-        
+
         with patch("bob.storage.registry.IndexRegistry") as mock_registry_class:
             mock_registry_class.return_value = mock_repo
-            
+
             repo_id = registry.create_repository("https://github.com/test/repo")
             assert isinstance(repo_id, UUID)
 
@@ -209,7 +209,7 @@ class TestIndexRegistryManager:
         """Test get repository"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         # Mock repository
         mock_repo = MagicMock()
         mock_repo.repo_id = uuid4()
@@ -222,9 +222,9 @@ class TestIndexRegistryManager:
         mock_repo.updated_at = datetime.utcnow()
         mock_repo.last_full_index = None
         mock_repo.last_incremental = None
-        
+
         mock_session.first.return_value = mock_repo
-        
+
         repo_data = registry.get_repository(mock_repo.repo_id)
         assert repo_data["github_url"] == "https://github.com/test/repo"
         assert repo_data["status"] == "idle"
@@ -234,15 +234,15 @@ class TestIndexRegistryManager:
         """Test update repository status"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         mock_repo = MagicMock()
         mock_repo.status = "idle"
         mock_repo.error_count = 0
         mock_session.first.return_value = mock_repo
-        
+
         repo_id = uuid4()
         registry.update_repository_status(repo_id, "indexing")
-        
+
         assert mock_repo.status == "indexing"
         mock_session.commit.assert_called_once()
 
@@ -250,13 +250,13 @@ class TestIndexRegistryManager:
         """Test update repository metrics"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         mock_repo = MagicMock()
         mock_session.first.return_value = mock_repo
-        
+
         repo_id = uuid4()
         registry.update_repository_metrics(repo_id, 150, 5, 96.7)
-        
+
         assert mock_repo.file_count == 150
         assert mock_repo.error_count == 5
         assert mock_repo.coverage_pct == 96.7
@@ -266,16 +266,16 @@ class TestIndexRegistryManager:
         """Test stale repository detection"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         # Mock stale repositories
         mock_repo1 = MagicMock()
         mock_repo1.repo_id = uuid4()
         mock_repo1.github_url = "https://github.com/test/repo1"
         mock_repo1.status = "idle"
         mock_repo1.last_incremental = datetime.utcnow()
-        
+
         mock_session.all.return_value = [mock_repo1]
-        
+
         stale_repos = registry.detect_stale_repositories(threshold_minutes=10)
         assert len(stale_repos) == 1
         assert stale_repos[0]["github_url"] == "https://github.com/test/repo1"
@@ -284,7 +284,7 @@ class TestIndexRegistryManager:
         """Test list repositories"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         # Mock repositories
         mock_repos = []
         for i in range(3):
@@ -298,11 +298,11 @@ class TestIndexRegistryManager:
             mock_repo.last_full_index = None
             mock_repo.last_incremental = None
             mock_repos.append(mock_repo)
-        
+
         mock_session.limit.return_value = mock_session
         mock_session.offset.return_value = mock_session
         mock_session.all.return_value = mock_repos
-        
+
         repos = registry.list_repositories(limit=10)
         assert len(repos) == 3
 
@@ -310,15 +310,15 @@ class TestIndexRegistryManager:
         """Test create index job"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         mock_job = MagicMock()
         mock_job.job_id = uuid4()
         mock_session.add = MagicMock()
         mock_session.commit = MagicMock()
-        
+
         with patch("bob.storage.registry.IndexJob") as mock_job_class:
             mock_job_class.return_value = mock_job
-            
+
             repo_id = uuid4()
             job_id = registry.create_index_job(repo_id, "full")
             assert isinstance(job_id, UUID)
@@ -327,16 +327,16 @@ class TestIndexRegistryManager:
         """Test update job status"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         mock_job = MagicMock()
         mock_job.status = "pending"
         mock_job.started_at = None
         mock_job.completed_at = None
         mock_session.first.return_value = mock_job
-        
+
         job_id = uuid4()
         registry.update_job_status(job_id, "running")
-        
+
         assert mock_job.status == "running"
         assert mock_job.started_at is not None
         mock_session.commit.assert_called_once()
@@ -345,11 +345,11 @@ class TestIndexRegistryManager:
         """Test get health metrics"""
         registry = IndexRegistryManager()
         registry.connect()
-        
+
         # Mock metrics
         mock_session.scalar.return_value = 10
         mock_session.all.return_value = []
-        
+
         metrics = registry.get_health_metrics()
         assert "total_repositories" in metrics
         assert "status_counts" in metrics

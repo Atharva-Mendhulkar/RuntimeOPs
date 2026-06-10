@@ -9,7 +9,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
 # ============================================================================
 # Tool 1: Semantic Search Models
 # ============================================================================

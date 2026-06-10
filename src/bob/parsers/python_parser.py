@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class PythonParser(LanguageParser):
     """
     Python language parser using Tree-sitter.
-    
+
     Extracts:
     - Classes and methods
     - Functions
@@ -61,10 +61,10 @@ class PythonParser(LanguageParser):
     def _extract_symbols(self, tree: Any, source_code: bytes) -> list[CodeSymbol]:
         """Extract classes, functions, and methods from Python AST"""
         symbols = []
-        
+
         def traverse(node: Any, parent_class: str | None = None) -> None:
             """Recursively traverse AST and extract symbols"""
-            
+
             # Extract class definitions
             if node.type == "class_definition":
                 class_symbol = self._extract_class(node, source_code)
@@ -75,24 +75,24 @@ class PythonParser(LanguageParser):
                         if child.type == "block":
                             for stmt in child.children:
                                 traverse(stmt, class_symbol.name)
-            
+
             # Extract function definitions
             elif node.type == "function_definition":
                 func_symbol = self._extract_function(node, source_code, parent_class)
                 if func_symbol:
                     symbols.append(func_symbol)
-            
+
             # Extract decorated definitions
             elif node.type == "decorated_definition":
                 for child in node.children:
                     if child.type in ("class_definition", "function_definition"):
                         traverse(child, parent_class)
-            
+
             # Continue traversing for top-level definitions
             elif parent_class is None:
                 for child in node.children:
                     traverse(child, parent_class)
-        
+
         traverse(tree.root_node)
         return symbols
 
@@ -103,10 +103,10 @@ class PythonParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             # Get base classes
             superclasses = []
             superclass_node = node.child_by_field_name("superclasses")
@@ -114,13 +114,13 @@ class PythonParser(LanguageParser):
                 for child in superclass_node.children:
                     if child.type == "identifier":
                         superclasses.append(self._get_node_text(child, source_code))
-            
+
             # Get docstring
             docstring = self._extract_docstring(node, source_code)
-            
+
             # Get full body
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=SymbolType.CLASS,
@@ -129,7 +129,9 @@ class PythonParser(LanguageParser):
                 end_line=end_line,
                 start_byte=node.start_byte,
                 end_byte=node.end_byte,
-                signature=f"class {name}({', '.join(superclasses)})" if superclasses else f"class {name}",
+                signature=(
+                    f"class {name}({', '.join(superclasses)})" if superclasses else f"class {name}"
+                ),
                 docstring=docstring,
                 parent=None,
                 modifiers=[],
@@ -151,13 +153,13 @@ class PythonParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             # Determine if it's a method or function
             symbol_type = SymbolType.METHOD if parent_class else SymbolType.FUNCTION
-            
+
             # Get parameters
             parameters = []
             params_node = node.child_by_field_name("parameters")
@@ -177,22 +179,22 @@ class PythonParser(LanguageParser):
                         param_name = child.child_by_field_name("name")
                         if param_name:
                             parameters.append(self._get_node_text(param_name, source_code))
-            
+
             # Get return type
             return_type = None
             return_node = node.child_by_field_name("return_type")
             if return_node:
                 return_type = self._get_node_text(return_node, source_code)
-            
+
             # Get docstring
             docstring = self._extract_docstring(node, source_code)
-            
+
             # Build signature
             params_str = ", ".join(parameters)
             signature = f"def {name}({params_str})"
             if return_type:
                 signature += f" -> {return_type}"
-            
+
             # Get modifiers (async, etc.)
             modifiers = []
             if node.parent and node.parent.type == "decorated_definition":
@@ -200,16 +202,16 @@ class PythonParser(LanguageParser):
                     if child.type == "decorator":
                         decorator_text = self._get_node_text(child, source_code)
                         modifiers.append(decorator_text)
-            
+
             # Check for async
             for child in node.children:
                 if child.type == "async":
                     modifiers.append("async")
                     break
-            
+
             # Get full body
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=symbol_type,
@@ -237,7 +239,7 @@ class PythonParser(LanguageParser):
             body_node = node.child_by_field_name("body")
             if not body_node:
                 return None
-            
+
             # First statement in body should be expression_statement with string
             for child in body_node.children:
                 if child.type == "expression_statement":
@@ -248,7 +250,7 @@ class PythonParser(LanguageParser):
                             docstring = docstring.strip('"""').strip("'''").strip('"').strip("'")
                             return docstring.strip()
                     break
-            
+
             return None
         except Exception:
             return None
@@ -256,26 +258,26 @@ class PythonParser(LanguageParser):
     def _extract_imports(self, tree: Any, source_code: bytes) -> list[ImportStatement]:
         """Extract import statements from Python AST"""
         imports = []
-        
+
         def traverse(node: Any) -> None:
             """Recursively find import statements"""
-            
+
             # Handle 'import module' statements
             if node.type == "import_statement":
                 import_stmt = self._extract_import_statement(node, source_code)
                 if import_stmt:
                     imports.append(import_stmt)
-            
+
             # Handle 'from module import name' statements
             elif node.type == "import_from_statement":
                 import_stmt = self._extract_import_from_statement(node, source_code)
                 if import_stmt:
                     imports.append(import_stmt)
-            
+
             # Continue traversing
             for child in node.children:
                 traverse(child)
-        
+
         traverse(tree.root_node)
         return imports
 
@@ -289,7 +291,7 @@ class PythonParser(LanguageParser):
             imported_names = []
             module = ""
             alias = None
-            
+
             for child in node.children:
                 if child.type == "dotted_name":
                     module = self._get_node_text(child, source_code)
@@ -302,12 +304,12 @@ class PythonParser(LanguageParser):
                         imported_names.append(module)
                     if alias_node:
                         alias = self._get_node_text(alias_node, source_code)
-            
+
             if not module:
                 return None
-            
+
             start_line, _ = self._get_node_line_range(node)
-            
+
             return ImportStatement(
                 module=module,
                 imported_names=imported_names,
@@ -329,7 +331,7 @@ class PythonParser(LanguageParser):
             module = ""
             imported_names = []
             is_relative = False
-            
+
             # Get module name
             module_node = node.child_by_field_name("module_name")
             if module_node:
@@ -341,7 +343,7 @@ class PythonParser(LanguageParser):
                         is_relative = True
                         module = self._get_node_text(child, source_code)
                         break
-            
+
             # Get imported names
             for child in node.children:
                 if child.type == "dotted_name":
@@ -352,12 +354,12 @@ class PythonParser(LanguageParser):
                         imported_names.append(self._get_node_text(name_node, source_code))
                 elif child.type == "wildcard_import":
                     imported_names.append("*")
-            
+
             if not module and not is_relative:
                 return None
-            
+
             start_line, _ = self._get_node_line_range(node)
-            
+
             return ImportStatement(
                 module=module,
                 imported_names=imported_names,

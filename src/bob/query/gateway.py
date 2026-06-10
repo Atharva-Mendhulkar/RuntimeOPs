@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class QueryGateway:
     """
     Query gateway for authentication, rate limiting, and logging.
-    
+
     Responsibilities:
     - Verify RuntimeOps internal JWT tokens
     - Extract repo_id and org_id from token claims
@@ -70,13 +70,13 @@ class QueryGateway:
     def verify_token(self, authorization: str | None = None) -> dict[str, Any]:
         """
         Verify RuntimeOps internal JWT token.
-        
+
         Args:
             authorization: Authorization header value (Bearer <token>)
-            
+
         Returns:
             Dictionary with token claims (repo_id, org_id, etc.)
-            
+
         Raises:
             AuthenticationError: If token is missing or invalid
             InvalidTokenError: If token is expired or malformed
@@ -108,7 +108,7 @@ class QueryGateway:
             # Validate required claims
             required_claims = ["repo_id", "org_id", "exp"]
             missing_claims = [claim for claim in required_claims if claim not in payload]
-            
+
             if missing_claims:
                 raise InvalidTokenError(
                     f"Missing required claims: {', '.join(missing_claims)}",
@@ -143,14 +143,14 @@ class QueryGateway:
     def check_rate_limit(self, agent_id: str) -> None:
         """
         Check rate limit for agent.
-        
+
         Rate limits:
         - 500 requests per minute (normal)
         - 1000 requests per minute burst (10 second window)
-        
+
         Args:
             agent_id: Agent identifier (typically org_id or agent instance ID)
-            
+
         Raises:
             RateLimitExceededError: If rate limit is exceeded
         """
@@ -222,7 +222,7 @@ class QueryGateway:
     ) -> None:
         """
         Log request details (excluding sensitive data per FR-025).
-        
+
         Args:
             request: FastAPI request object
             claims: Token claims
@@ -262,16 +262,16 @@ class QueryGateway:
     ) -> dict[str, Any]:
         """
         Authenticate and authorize a request.
-        
+
         This is the main entry point for request authentication.
-        
+
         Args:
             request: FastAPI request object
             authorization: Authorization header
-            
+
         Returns:
             Token claims dictionary
-            
+
         Raises:
             HTTPException: If authentication or rate limiting fails
         """
@@ -340,10 +340,10 @@ class QueryGateway:
     def get_rate_limit_stats(self, agent_id: str) -> dict[str, Any]:
         """
         Get rate limit statistics for an agent.
-        
+
         Args:
             agent_id: Agent identifier
-            
+
         Returns:
             Dictionary with rate limit stats
         """
@@ -380,7 +380,7 @@ _gateway: QueryGateway | None = None
 def get_gateway() -> QueryGateway:
     """
     Get or create the global query gateway instance.
-    
+
     Returns:
         QueryGateway instance
     """

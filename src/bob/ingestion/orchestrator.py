@@ -14,7 +14,7 @@ from typing import Any
 from bob.config import get_settings
 from bob.exceptions import IndexingError, IndexingTimeoutError
 from bob.ingestion.analyzer import AnalysisResult, StructuralAnalyzer
-from bob.ingestion.convention_extractor import ConventionExtractor, CodingConvention
+from bob.ingestion.convention_extractor import CodingConvention, ConventionExtractor
 from bob.ingestion.fetcher import RepositoryFetcher, RepositoryMetadata
 from bob.parsers.base import LanguageParser, ParseResult
 from bob.parsers.go_parser import GoParser
@@ -103,13 +103,13 @@ class IngestionResult:
 class IngestOrchestrator:
     """
     Orchestrates the complete ingestion pipeline.
-    
+
     Responsibilities:
     - Coordinate all pipeline stages
     - Implement checkpointing for long-running jobs
     - Progress tracking and status updates
     - Meet 5-minute indexing SLA for 200 KLOC repos (FR-003)
-    
+
     Pipeline stages:
     1. Repository Fetcher - Clone/pull repository
     2. Language Parsers - Parse all source files
@@ -146,16 +146,16 @@ class IngestOrchestrator:
     ) -> IngestionResult:
         """
         Ingest a complete repository through all pipeline stages.
-        
+
         Args:
             repo_url: GitHub repository URL
             installation_id: GitHub App installation ID
             job_id: Optional job ID for tracking
             branch: Optional branch to clone
-            
+
         Returns:
             Ingestion result with all extracted data
-            
+
         Raises:
             IndexingError: If ingestion fails
             IndexingTimeoutError: If ingestion exceeds timeout
@@ -164,13 +164,13 @@ class IngestOrchestrator:
             job_id = f"ingest_{int(time.time())}"
 
         logger.info(f"Starting ingestion job {job_id} for {repo_url}")
-        
+
         # Initialize progress tracking
         progress = IngestionProgress(job_id=job_id, status=IngestionStatus.PENDING)
-        
+
         # Check for existing checkpoint
         checkpoint = self._checkpoints.get(job_id)
-        
+
         try:
             # Stage 1: Fetch repository
             if checkpoint and checkpoint.repo_path:
@@ -179,11 +179,9 @@ class IngestOrchestrator:
                 repo_metadata = None  # Would load from checkpoint
             else:
                 progress.status = IngestionStatus.FETCHING
-                repo_path, repo_metadata = self._fetch_repository(
-                    repo_url, installation_id, branch
-                )
+                repo_path, repo_metadata = self._fetch_repository(repo_url, installation_id, branch)
                 self._save_checkpoint(job_id, IngestionStatus.FETCHING, repo_path=repo_path)
-            
+
             # Stage 2: Parse files
             if checkpoint and checkpoint.parse_results:
                 parse_results = checkpoint.parse_results
@@ -191,9 +189,12 @@ class IngestOrchestrator:
                 progress.status = IngestionStatus.PARSING
                 parse_results = self._parse_repository(repo_path, progress)
                 self._save_checkpoint(
-                    job_id, IngestionStatus.PARSING, repo_path=repo_path, parse_results=parse_results
+                    job_id,
+                    IngestionStatus.PARSING,
+                    repo_path=repo_path,
+                    parse_results=parse_results,
                 )
-            
+
             # Stage 3: Structural analysis
             if checkpoint and checkpoint.analysis_result:
                 analysis_result = checkpoint.analysis_result
@@ -207,7 +208,7 @@ class IngestOrchestrator:
                     parse_results=parse_results,
                     analysis_result=analysis_result,
                 )
-            
+
             # Stage 4: Generate embeddings
             if checkpoint and checkpoint.embeddings:
                 embeddings = checkpoint.embeddings
@@ -222,7 +223,7 @@ class IngestOrchestrator:
                     analysis_result=analysis_result,
                     embeddings=embeddings,
                 )
-            
+
             # Stage 5: Extract conventions
             if checkpoint and checkpoint.conventions:
                 conventions = checkpoint.conventions
@@ -238,15 +239,15 @@ class IngestOrchestrator:
                     embeddings=embeddings,
                     conventions=conventions,
                 )
-            
+
             # Stage 6: Store results (would implement actual storage)
             progress.status = IngestionStatus.STORING
             # TODO: Implement storage to Neo4j, Weaviate, PostgreSQL
-            
+
             # Complete
             progress.status = IngestionStatus.COMPLETED
             progress.end_time = datetime.now()
-            
+
             # Check SLA (FR-003: 5 minutes for 200 KLOC)
             elapsed = progress.elapsed_seconds
             if repo_metadata and repo_metadata.total_lines > 200000 and elapsed > 300:
@@ -254,17 +255,17 @@ class IngestOrchestrator:
                     f"Indexing exceeded 5-minute SLA: {elapsed:.2f}s for "
                     f"{repo_metadata.total_lines} lines"
                 )
-            
+
             logger.info(
                 f"Ingestion completed in {elapsed:.2f}s: "
                 f"{progress.total_files} files, {progress.total_symbols} symbols, "
                 f"{progress.total_embeddings} embeddings"
             )
-            
+
             # Clean up checkpoint
             if job_id in self._checkpoints:
                 del self._checkpoints[job_id]
-            
+
             return IngestionResult(
                 job_id=job_id,
                 repo_url=repo_url,
@@ -276,17 +277,17 @@ class IngestOrchestrator:
                 progress=progress,
                 success=True,
             )
-        
+
         except Exception as e:
             progress.status = IngestionStatus.FAILED
             progress.end_time = datetime.now()
             progress.error = str(e)
-            
+
             logger.error(f"Ingestion failed for {repo_url}: {e}", exc_info=True)
-            
+
             # Save error checkpoint
             self._save_checkpoint(job_id, IngestionStatus.FAILED, error=str(e))
-            
+
             return IngestionResult(
                 job_id=job_id,
                 repo_url=repo_url,
@@ -308,15 +309,13 @@ class IngestOrchestrator:
     ) -> tuple[Path, RepositoryMetadata]:
         """Fetch repository using RepositoryFetcher"""
         start_time = time.time()
-        
+
         with RepositoryFetcher() as fetcher:
-            repo_path, metadata = fetcher.clone_repository(
-                repo_url, installation_id, branch
-            )
-            
+            repo_path, metadata = fetcher.clone_repository(repo_url, installation_id, branch)
+
             elapsed = time.time() - start_time
             logger.info(f"Repository fetched in {elapsed:.2f}s")
-            
+
             return repo_path, metadata
 
     def _parse_repository(
@@ -325,25 +324,25 @@ class IngestOrchestrator:
         progress: IngestionProgress,
     ) -> list[ParseResult]:
         """Parse all source files in repository"""
-        import time
         import concurrent.futures
-        
+        import time
+
         start_time = time.time()
         parse_results = []
-        
+
         # Find all source files
         source_files = []
         for parser in self._parsers.values():
             for ext in parser.file_extensions:
                 source_files.extend(repo_path.rglob(f"*{ext}"))
-        
+
         # Remove duplicates and filter
         source_files = list(set(source_files))
         source_files = [f for f in source_files if self._should_parse_file(f)]
-        
+
         progress.total_files = len(source_files)
         logger.info(f"Found {len(source_files)} source files to parse")
-        
+
         def parse_single_file(file_path: Path) -> ParseResult | None:
             parser = self._get_parser_for_file(file_path)
             if not parser:
@@ -364,19 +363,19 @@ class IngestOrchestrator:
                     parse_results.append(result)
                     progress.processed_files += 1
                     progress.total_symbols += len(result.symbols)
-                    
+
                     if progress.processed_files % 100 == 0:
                         logger.info(
                             f"Parsed {progress.processed_files}/{progress.total_files} files "
                             f"({progress.progress_percentage:.1f}%)"
                         )
-        
+
         elapsed = time.time() - start_time
         logger.info(
             f"Parsing completed in {elapsed:.2f}s: "
             f"{len(parse_results)} files, {progress.total_symbols} symbols"
         )
-        
+
         return parse_results
 
     def _should_parse_file(self, file_path: Path) -> bool:
@@ -397,7 +396,7 @@ class IngestOrchestrator:
             "tests",
             "spec",
         ]
-        
+
         path_str = str(file_path)
         return not any(pattern in path_str for pattern in skip_patterns)
 
@@ -415,17 +414,17 @@ class IngestOrchestrator:
     ) -> AnalysisResult:
         """Perform structural analysis"""
         start_time = time.time()
-        
+
         analyzer = StructuralAnalyzer()
         result = analyzer.analyze(repo_path, parse_results)
-        
+
         elapsed = time.time() - start_time
         logger.info(
             f"Structural analysis completed in {elapsed:.2f}s: "
             f"{result.total_files} files, {result.total_edges} edges, "
             f"{len(result.service_boundaries)} services"
         )
-        
+
         return result
 
     def _generate_embeddings(
@@ -435,15 +434,17 @@ class IngestOrchestrator:
     ) -> list[Embedding]:
         """Generate semantic embeddings"""
         start_time = time.time()
-        
+
         embedder = SemanticEmbedder()
         embeddings = embedder.embed_parse_results(parse_results, use_local_fallback=True)
-        
+
         progress.total_embeddings = len(embeddings)
-        
+
         elapsed = time.time() - start_time
-        logger.info(f"Embedding generation completed in {elapsed:.2f}s: {len(embeddings)} embeddings")
-        
+        logger.info(
+            f"Embedding generation completed in {elapsed:.2f}s: {len(embeddings)} embeddings"
+        )
+
         return embeddings
 
     def _extract_conventions(
@@ -452,16 +453,15 @@ class IngestOrchestrator:
     ) -> dict[str, CodingConvention]:
         """Extract coding conventions"""
         start_time = time.time()
-        
+
         extractor = ConventionExtractor()
         conventions = extractor.extract_conventions(parse_results)
-        
+
         elapsed = time.time() - start_time
         logger.info(
-            f"Convention extraction completed in {elapsed:.2f}s: "
-            f"{len(conventions)} languages"
+            f"Convention extraction completed in {elapsed:.2f}s: " f"{len(conventions)} languages"
         )
-        
+
         return conventions
 
     def _save_checkpoint(

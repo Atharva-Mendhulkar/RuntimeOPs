@@ -23,7 +23,7 @@ class SecretsManager:
     def __init__(self, encryption_key: Optional[bytes] = None):
         """
         Initialize secrets manager.
-        
+
         Args:
             encryption_key: Fernet encryption key (32 bytes, base64-encoded)
                           If not provided, uses ENCRYPTION_KEY from settings
@@ -43,13 +43,13 @@ class SecretsManager:
     def encrypt_secret(self, plaintext: str) -> str:
         """
         Encrypt a secret value.
-        
+
         Args:
             plaintext: Secret value to encrypt
-            
+
         Returns:
             Base64-encoded encrypted value
-            
+
         Raises:
             EncryptionError: If encryption fails
         """
@@ -62,13 +62,13 @@ class SecretsManager:
     def decrypt_secret(self, ciphertext: str) -> str:
         """
         Decrypt a secret value.
-        
+
         Args:
             ciphertext: Base64-encoded encrypted value
-            
+
         Returns:
             Decrypted plaintext value
-            
+
         Raises:
             EncryptionError: If decryption fails
         """
@@ -86,16 +86,16 @@ class SecretsManager:
     ) -> int:
         """
         Rotate encryption key and re-encrypt all secrets.
-        
+
         This is a critical operation that should be performed during maintenance.
-        
+
         Args:
             new_key: New Fernet encryption key
             db_connection: Database connection for updating secrets
-            
+
         Returns:
             Number of secrets re-encrypted
-            
+
         Raises:
             EncryptionError: If rotation fails
         """
@@ -106,12 +106,10 @@ class SecretsManager:
             cursor = db_connection.cursor()
 
             # Get all encrypted secrets from database
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT key_id, hashed_secret FROM api_keys
                 WHERE hashed_secret IS NOT NULL
-                """
-            )
+                """)
 
             secrets = cursor.fetchall()
             count = 0
@@ -157,7 +155,7 @@ class SecretsManager:
 def generate_encryption_key() -> str:
     """
     Generate a new Fernet encryption key.
-    
+
     Returns:
         Base64-encoded encryption key (suitable for ENCRYPTION_KEY env var)
     """
@@ -168,11 +166,11 @@ def generate_encryption_key() -> str:
 def derive_key_from_password(password: str, salt: Optional[bytes] = None) -> bytes:
     """
     Derive encryption key from password using PBKDF2.
-    
+
     Args:
         password: Password to derive key from
         salt: Salt for key derivation (generates random if not provided)
-        
+
     Returns:
         Derived encryption key (32 bytes, suitable for Fernet)
     """
@@ -193,11 +191,11 @@ def derive_key_from_password(password: str, salt: Optional[bytes] = None) -> byt
 def mask_secret(secret: str, visible_chars: int = 4) -> str:
     """
     Mask a secret for display purposes.
-    
+
     Args:
         secret: Secret to mask
         visible_chars: Number of characters to show at end
-        
+
     Returns:
         Masked secret (e.g., "bob_live_****abc123")
     """
@@ -213,10 +211,10 @@ def mask_secret(secret: str, visible_chars: int = 4) -> str:
 def validate_encryption_key(key: str) -> bool:
     """
     Validate that a string is a valid Fernet encryption key.
-    
+
     Args:
         key: Encryption key to validate
-        
+
     Returns:
         True if valid
     """
@@ -230,7 +228,7 @@ def validate_encryption_key(key: str) -> bool:
 class SecretString:
     """
     Wrapper for secret strings that prevents accidental logging.
-    
+
     Usage:
         secret = SecretString("my-secret-value")
         print(secret)  # Prints: SecretString(****)
@@ -240,7 +238,7 @@ class SecretString:
     def __init__(self, secret: str):
         """
         Initialize secret string.
-        
+
         Args:
             secret: Secret value
         """
@@ -273,7 +271,7 @@ class SecretString:
 def validate_required_secrets() -> None:
     """
     Validate that all required secrets are configured.
-    
+
     Raises:
         EncryptionError: If required secrets are missing
     """
@@ -299,10 +297,10 @@ def validate_required_secrets() -> None:
 def sanitize_for_logging(data: dict) -> dict:
     """
     Sanitize dictionary for logging by masking sensitive fields.
-    
+
     Args:
         data: Dictionary to sanitize
-        
+
     Returns:
         Sanitized dictionary with secrets masked
     """
@@ -329,8 +327,7 @@ def sanitize_for_logging(data: dict) -> dict:
             sanitized[key] = sanitize_for_logging(value)
         elif isinstance(value, list):
             sanitized[key] = [
-                sanitize_for_logging(item) if isinstance(item, dict) else item
-                for item in value
+                sanitize_for_logging(item) if isinstance(item, dict) else item for item in value
             ]
         else:
             sanitized[key] = value

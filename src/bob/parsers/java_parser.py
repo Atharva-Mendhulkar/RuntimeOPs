@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class JavaParser(LanguageParser):
     """
     Java language parser using Tree-sitter.
-    
+
     Extracts:
     - Classes and inner classes
     - Methods
@@ -61,10 +61,10 @@ class JavaParser(LanguageParser):
     def _extract_symbols(self, tree: Any, source_code: bytes) -> list[CodeSymbol]:
         """Extract classes, methods, interfaces from Java AST"""
         symbols = []
-        
+
         def traverse(node: Any, parent_class: str | None = None) -> None:
             """Recursively traverse AST and extract symbols"""
-            
+
             # Extract class declarations
             if node.type == "class_declaration":
                 class_symbol = self._extract_class(node, source_code, parent_class)
@@ -75,7 +75,7 @@ class JavaParser(LanguageParser):
                     if body_node:
                         for child in body_node.children:
                             traverse(child, class_symbol.name)
-            
+
             # Extract interface declarations
             elif node.type == "interface_declaration":
                 interface_symbol = self._extract_interface(node, source_code)
@@ -86,30 +86,30 @@ class JavaParser(LanguageParser):
                     if body_node:
                         for child in body_node.children:
                             traverse(child, interface_symbol.name)
-            
+
             # Extract enum declarations
             elif node.type == "enum_declaration":
                 enum_symbol = self._extract_enum(node, source_code)
                 if enum_symbol:
                     symbols.append(enum_symbol)
-            
+
             # Extract method declarations
             elif node.type == "method_declaration":
                 method_symbol = self._extract_method(node, source_code, parent_class)
                 if method_symbol:
                     symbols.append(method_symbol)
-            
+
             # Extract constructor declarations
             elif node.type == "constructor_declaration":
                 constructor_symbol = self._extract_constructor(node, source_code, parent_class)
                 if constructor_symbol:
                     symbols.append(constructor_symbol)
-            
+
             # Continue traversing for top-level definitions
             elif parent_class is None:
                 for child in node.children:
                     traverse(child, parent_class)
-        
+
         traverse(tree.root_node)
         return symbols
 
@@ -124,26 +124,26 @@ class JavaParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             # Get modifiers (public, private, static, abstract, etc.)
             modifiers = self._extract_modifiers(node, source_code)
-            
+
             # Get superclass
             superclass = None
             superclass_node = node.child_by_field_name("superclass")
             if superclass_node:
                 superclass = self._get_node_text(superclass_node, source_code)
-            
+
             # Get interfaces
             interfaces = []
             interfaces_node = node.child_by_field_name("interfaces")
             if interfaces_node:
                 interfaces_text = self._get_node_text(interfaces_node, source_code)
                 interfaces.append(interfaces_text)
-            
+
             # Build signature
             mods_str = " ".join(modifiers) if modifiers else ""
             signature = f"{mods_str} class {name}".strip()
@@ -151,9 +151,9 @@ class JavaParser(LanguageParser):
                 signature += f" extends {superclass}"
             if interfaces:
                 signature += f" {' '.join(interfaces)}"
-            
+
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=SymbolType.CLASS,
@@ -178,26 +178,26 @@ class JavaParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             modifiers = self._extract_modifiers(node, source_code)
-            
+
             # Get extends clause
             extends = []
             extends_node = node.child_by_field_name("extends")
             if extends_node:
                 extends_text = self._get_node_text(extends_node, source_code)
                 extends.append(extends_text)
-            
+
             mods_str = " ".join(modifiers) if modifiers else ""
             signature = f"{mods_str} interface {name}".strip()
             if extends:
                 signature += f" {' '.join(extends)}"
-            
+
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=SymbolType.INTERFACE,
@@ -222,17 +222,17 @@ class JavaParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             modifiers = self._extract_modifiers(node, source_code)
-            
+
             mods_str = " ".join(modifiers) if modifiers else ""
             signature = f"{mods_str} enum {name}".strip()
-            
+
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=SymbolType.ENUM,
@@ -262,31 +262,31 @@ class JavaParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             modifiers = self._extract_modifiers(node, source_code)
-            
+
             # Get return type
             return_type = None
             type_node = node.child_by_field_name("type")
             if type_node:
                 return_type = self._get_node_text(type_node, source_code)
-            
+
             # Get parameters
             parameters = []
             params_node = node.child_by_field_name("parameters")
             if params_node:
                 parameters = self._extract_parameters(params_node, source_code)
-            
+
             # Build signature
             mods_str = " ".join(modifiers) if modifiers else ""
             params_str = ", ".join(parameters)
             signature = f"{mods_str} {return_type or 'void'} {name}({params_str})".strip()
-            
+
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=SymbolType.METHOD,
@@ -318,26 +318,26 @@ class JavaParser(LanguageParser):
             name_node = node.child_by_field_name("name")
             if not name_node:
                 return None
-            
+
             name = self._get_node_text(name_node, source_code)
             start_line, end_line = self._get_node_line_range(node)
-            
+
             modifiers = self._extract_modifiers(node, source_code)
             modifiers.append("constructor")
-            
+
             # Get parameters
             parameters = []
             params_node = node.child_by_field_name("parameters")
             if params_node:
                 parameters = self._extract_parameters(params_node, source_code)
-            
+
             # Build signature
             mods_str = " ".join([m for m in modifiers if m != "constructor"])
             params_str = ", ".join(parameters)
             signature = f"{mods_str} {name}({params_str})".strip()
-            
+
             body = self._get_node_text(node, source_code)
-            
+
             return CodeSymbol(
                 name=name,
                 symbol_type=SymbolType.METHOD,
@@ -360,7 +360,7 @@ class JavaParser(LanguageParser):
     def _extract_parameters(self, params_node: Any, source_code: bytes) -> list[str]:
         """Extract method parameters"""
         parameters = []
-        
+
         for child in params_node.children:
             if child.type == "formal_parameter":
                 param_text = self._get_node_text(child, source_code)
@@ -368,13 +368,13 @@ class JavaParser(LanguageParser):
             elif child.type == "spread_parameter":
                 param_text = self._get_node_text(child, source_code)
                 parameters.append(param_text)
-        
+
         return parameters
 
     def _extract_modifiers(self, node: Any, source_code: bytes) -> list[str]:
         """Extract modifiers (public, private, static, etc.)"""
         modifiers = []
-        
+
         for child in node.children:
             if child.type == "modifiers":
                 for mod_child in child.children:
@@ -396,24 +396,24 @@ class JavaParser(LanguageParser):
                         # Include annotations as modifiers
                         annotation_text = self._get_node_text(mod_child, source_code)
                         modifiers.append(annotation_text)
-        
+
         return modifiers
 
     def _extract_imports(self, tree: Any, source_code: bytes) -> list[ImportStatement]:
         """Extract import statements from Java AST"""
         imports = []
-        
+
         def traverse(node: Any) -> None:
             """Recursively find import statements"""
-            
+
             if node.type == "import_declaration":
                 import_stmt = self._extract_import_declaration(node, source_code)
                 if import_stmt:
                     imports.append(import_stmt)
-            
+
             for child in node.children:
                 traverse(child)
-        
+
         traverse(tree.root_node)
         return imports
 
@@ -426,23 +426,23 @@ class JavaParser(LanguageParser):
         try:
             # Get the full import text
             import_text = self._get_node_text(node, source_code)
-            
+
             # Check for static import
             is_static = "static" in import_text
-            
+
             # Check for wildcard import
             is_wildcard = "*" in import_text
-            
+
             # Extract module path
             module = ""
             for child in node.children:
                 if child.type == "scoped_identifier" or child.type == "identifier":
                     module = self._get_node_text(child, source_code)
                     break
-            
+
             if not module:
                 return None
-            
+
             # Extract imported names
             imported_names = []
             if is_wildcard:
@@ -450,9 +450,9 @@ class JavaParser(LanguageParser):
             else:
                 # Get the last part of the module path as the imported name
                 imported_names.append(module.split(".")[-1])
-            
+
             start_line, _ = self._get_node_line_range(node)
-            
+
             return ImportStatement(
                 module=module,
                 imported_names=imported_names,

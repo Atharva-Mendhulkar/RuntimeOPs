@@ -94,15 +94,9 @@ class PerformanceMonitor:
             status: Query status (success, error, timeout)
         """
         # Record metrics
-        self.metrics.query_duration_seconds.labels(query_type=query_type).observe(
-            duration
-        )
-        self.metrics.queries_total.labels(
-            query_type=query_type, status=status
-        ).inc()
-        self.metrics.query_results_count.labels(query_type=query_type).observe(
-            result_count
-        )
+        self.metrics.query_duration_seconds.labels(query_type=query_type).observe(duration)
+        self.metrics.queries_total.labels(query_type=query_type, status=status).inc()
+        self.metrics.query_results_count.labels(query_type=query_type).observe(result_count)
 
         # Log query performance
         logger.info(
@@ -165,9 +159,9 @@ class PerformanceMonitor:
             status: Query status (success, error)
         """
         # Record metrics
-        self.metrics.db_query_duration_seconds.labels(
-            db_type=db_type, operation=operation
-        ).observe(duration)
+        self.metrics.db_query_duration_seconds.labels(db_type=db_type, operation=operation).observe(
+            duration
+        )
         self.metrics.db_queries_total.labels(
             db_type=db_type, operation=operation, status=status
         ).inc()
@@ -227,12 +221,8 @@ class PerformanceMonitor:
             status: Parsing status (success, error)
         """
         # Record metrics
-        self.metrics.parse_duration_seconds.labels(language=language).observe(
-            duration
-        )
-        self.metrics.files_parsed_total.labels(
-            language=language, status=status
-        ).inc()
+        self.metrics.parse_duration_seconds.labels(language=language).observe(duration)
+        self.metrics.files_parsed_total.labels(language=language, status=status).inc()
 
         # Log slow parsing
         if duration > 0.5:  # Log parsing slower than 500ms
@@ -269,19 +259,19 @@ class PerformanceMonitor:
         self.metrics.http_requests_total.labels(
             method=method, endpoint=endpoint, status=str(status_code)
         ).inc()
-        self.metrics.http_request_duration_seconds.labels(
-            method=method, endpoint=endpoint
-        ).observe(duration)
+        self.metrics.http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(
+            duration
+        )
 
         if request_size is not None:
-            self.metrics.http_request_size_bytes.labels(
-                method=method, endpoint=endpoint
-            ).observe(request_size)
+            self.metrics.http_request_size_bytes.labels(method=method, endpoint=endpoint).observe(
+                request_size
+            )
 
         if response_size is not None:
-            self.metrics.http_response_size_bytes.labels(
-                method=method, endpoint=endpoint
-            ).observe(response_size)
+            self.metrics.http_response_size_bytes.labels(method=method, endpoint=endpoint).observe(
+                response_size
+            )
 
         # Log slow requests
         if duration > 5.0:  # Log requests slower than 5 seconds

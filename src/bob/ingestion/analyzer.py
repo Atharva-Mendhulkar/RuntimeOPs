@@ -66,7 +66,7 @@ class AnalysisResult:
 class StructuralAnalyzer:
     """
     Analyzes repository structure and builds dependency graphs.
-    
+
     Responsibilities:
     - Build file-level dependency graph from imports
     - Detect service boundaries (package.json, go.mod, setup.py, pom.xml)
@@ -89,11 +89,11 @@ class StructuralAnalyzer:
     ) -> AnalysisResult:
         """
         Perform structural analysis on parsed repository.
-        
+
         Args:
             repo_path: Path to repository root
             parse_results: List of parse results from language parsers
-            
+
         Returns:
             Analysis result with graphs and service boundaries
         """
@@ -133,10 +133,10 @@ class StructuralAnalyzer:
     def _detect_service_boundaries(self, repo_path: Path) -> list[ServiceBoundary]:
         """
         Detect service boundaries by finding manifest files.
-        
+
         Args:
             repo_path: Path to repository root
-            
+
         Returns:
             List of detected service boundaries
         """
@@ -163,9 +163,7 @@ class StructuralAnalyzer:
                 root_path = str(manifest_file.parent.relative_to(repo_path))
 
                 # Extract dependencies from manifest
-                dependencies = self._extract_dependencies_from_manifest(
-                    manifest_file, service_type
-                )
+                dependencies = self._extract_dependencies_from_manifest(manifest_file, service_type)
 
                 # Find all files in this service
                 service_files = self._find_service_files(manifest_file.parent, repo_path)
@@ -262,13 +260,13 @@ class StructuralAnalyzer:
         """Map each file to its service boundary"""
         for result in parse_results:
             file_path = result.file_path
-            
+
             # Find which service this file belongs to
             for boundary in self.service_boundaries:
                 if file_path in boundary.files:
                     self.file_to_service[file_path] = boundary.name
                     break
-            
+
             # If no service found, mark as root
             if file_path not in self.file_to_service:
                 self.file_to_service[file_path] = "root"
@@ -291,12 +289,12 @@ class StructuralAnalyzer:
         # Add edges from imports
         for result in parse_results:
             source_file = result.file_path
-            
+
             for import_stmt in result.imports:
                 target_file = self._resolve_import_to_file(
                     import_stmt, source_file, repo_path, result.language
                 )
-                
+
                 if target_file:
                     # Internal dependency
                     if target_file in [r.file_path for r in parse_results]:
@@ -335,7 +333,7 @@ class StructuralAnalyzer:
     ) -> str | None:
         """
         Resolve an import statement to a file path.
-        
+
         This is a simplified implementation. A production version would need
         to handle language-specific module resolution rules.
         """
@@ -344,7 +342,7 @@ class StructuralAnalyzer:
         # Handle relative imports
         if import_stmt.is_relative:
             source_dir = Path(source_file).parent
-            
+
             if language == "python":
                 # Python relative imports
                 module_path = module.replace(".", "/")
@@ -364,14 +362,14 @@ class StructuralAnalyzer:
                 ]
             else:
                 return None
-            
+
             for potential_file in potential_files:
                 if potential_file.exists():
                     try:
                         return str(potential_file.relative_to(repo_path))
                     except ValueError:
                         pass
-        
+
         # For absolute imports, would need more sophisticated resolution
         # This is a placeholder - production would use language-specific resolvers
         return None
@@ -391,14 +389,14 @@ class StructuralAnalyzer:
                         symbol_type=symbol.symbol_type.value,
                         parent=symbol.parent,
                     )
-        
+
         # Build edges by analyzing function bodies for calls
         # This is a simplified version - production would use more sophisticated analysis
         for result in parse_results:
             for symbol in result.symbols:
                 if symbol.symbol_type.value in ("function", "method") and symbol.body:
                     source_node = f"{result.file_path}::{symbol.name}"
-                    
+
                     # Look for function calls in the body
                     # This is a naive approach - would need proper AST analysis
                     for other_result in parse_results:
@@ -420,24 +418,24 @@ class StructuralAnalyzer:
     ) -> set[str]:
         """
         Compute blast radius for changed files.
-        
+
         Args:
             changed_files: List of changed file paths
             max_hops: Maximum number of hops to traverse
-            
+
         Returns:
             Set of affected file paths
         """
         affected = set(changed_files)
-        
+
         for file_path in changed_files:
             if file_path not in self.dependency_graph:
                 continue
-            
+
             # Get all descendants (files that depend on this file)
             try:
                 descendants = nx.descendants(self.dependency_graph, file_path)
-                
+
                 # Limit by hop distance
                 for descendant in descendants:
                     try:
@@ -450,7 +448,7 @@ class StructuralAnalyzer:
                         pass
             except nx.NetworkXError:
                 pass
-        
+
         return affected
 
     def get_file_dependencies(
@@ -461,20 +459,20 @@ class StructuralAnalyzer:
     ) -> dict[str, Any]:
         """
         Get dependencies for a file.
-        
+
         Args:
             file_path: File path to analyze
             direction: "upstream", "downstream", or "both"
             max_hops: Maximum number of hops to traverse
-            
+
         Returns:
             Dictionary with upstream and downstream dependencies
         """
         result = {"upstream": [], "downstream": []}
-        
+
         if file_path not in self.dependency_graph:
             return result
-        
+
         if direction in ("upstream", "both"):
             # Files this file depends on
             try:
@@ -490,7 +488,7 @@ class StructuralAnalyzer:
                         pass
             except nx.NetworkXError:
                 pass
-        
+
         if direction in ("downstream", "both"):
             # Files that depend on this file
             try:
@@ -506,52 +504,52 @@ class StructuralAnalyzer:
                         pass
             except nx.NetworkXError:
                 pass
-        
+
         return result
 
     def compute_architectural_criticality_score(self, file_path: str) -> float:
         """
         Compute Architectural Criticality Score (ACS) for a file.
-        
+
         Based on:
         - In-degree (how many files depend on this)
         - Out-degree (how many files this depends on)
         - Betweenness centrality
-        
+
         Args:
             file_path: File path to analyze
-            
+
         Returns:
             ACS score between 0.0 and 1.0
         """
         if file_path not in self.dependency_graph:
             return 0.0
-        
+
         # Get in-degree (files that depend on this)
         in_degree = self.dependency_graph.in_degree(file_path)
-        
+
         # Get out-degree (files this depends on)
         out_degree = self.dependency_graph.out_degree(file_path)
-        
+
         # Compute betweenness centrality (how often this file is on shortest paths)
         try:
             betweenness = nx.betweenness_centrality(self.dependency_graph)
             betweenness_score = betweenness.get(file_path, 0.0)
         except:
             betweenness_score = 0.0
-        
+
         # Normalize and combine scores
         max_degree = max(
             max(dict(self.dependency_graph.in_degree()).values(), default=1),
             max(dict(self.dependency_graph.out_degree()).values(), default=1),
         )
-        
+
         normalized_in = in_degree / max_degree if max_degree > 0 else 0
         normalized_out = out_degree / max_degree if max_degree > 0 else 0
-        
+
         # Weighted combination (in-degree is more important)
-        acs = (0.5 * normalized_in + 0.2 * normalized_out + 0.3 * betweenness_score)
-        
+        acs = 0.5 * normalized_in + 0.2 * normalized_out + 0.3 * betweenness_score
+
         return min(acs, 1.0)
 
 

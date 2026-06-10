@@ -62,23 +62,23 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 60
     jwt_refresh_token_expire_days: int = 7
-    
+
     # Security - Encryption
     encryption_key: str | None = None
-    
+
     # Security - API Keys
     api_key_prefix_live: str = "bob_live_"
     api_key_prefix_test: str = "bob_test_"
     api_key_length: int = 32
-    
+
     # Security - Rate Limiting
     rate_limit_enabled: bool = True
     default_rate_limit_tier: str = "free"
-    
+
     # Security - CORS
     cors_origins: list[str] = Field(default=["http://localhost:3000"])
     cors_allow_credentials: bool = True
-    
+
     # Security - Audit Logging
     audit_log_retention_days: int = 90
 

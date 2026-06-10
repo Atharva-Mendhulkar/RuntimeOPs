@@ -2,9 +2,10 @@
 RuntimeOps Repository Intelligence Agent - Operational Validation Scenarios (VS-01 to VS-05)
 """
 
-import pytest
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
-from unittest.mock import Mock, patch, AsyncMock
+
+import pytest
 from fastapi.testclient import TestClient
 
 from bob.main import app
@@ -23,17 +24,18 @@ def mock_gateway():
     """Mock security query gateway"""
     with patch("bob.api.rest.get_gateway") as mock:
         gateway = Mock()
-        
+
         async def mock_authenticate_request(request, authorization=None):
             if not authorization:
                 from fastapi import HTTPException
+
                 raise HTTPException(status_code=401, detail="Missing authorization header")
             return {
                 "repo_id": str(uuid4()),
                 "org_id": "validation_org",
                 "exp": 9999999999,
             }
-            
+
         gateway.authenticate_request = mock_authenticate_request
         mock.return_value = gateway
         yield gateway
@@ -56,7 +58,7 @@ class TestValidationScenarios:
         """
         repo_uuid = str(uuid4())
         trace_input = (
-            'Traceback (most recent call last):\n'
+            "Traceback (most recent call last):\n"
             '  File "src/payment/auth/session.py", line 88, in handle_session\n'
             '    raise ConnectionError("Timeout")'
         )
@@ -76,7 +78,9 @@ class TestValidationScenarios:
         mock_blast_radius = Mock()
         mock_blast_radius.affected_files = ["src/payment/auth/session.py", "src/payment/api.py"]
         mock_blast_radius.affected_services = ["payment-gateway-api"]
-        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = mock_blast_radius
+        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = (
+            mock_blast_radius
+        )
         mock_graph_query.return_value.__enter__.return_value.get_file_metrics.return_value = {
             "fan_in": 12,
             "fan_out": 2,
@@ -195,7 +199,9 @@ class TestValidationScenarios:
         mock_blast_radius = Mock()
         mock_blast_radius.affected_files = ["src/checkout/service.py", "src/orders/service.py"]
         mock_blast_radius.affected_services = ["checkout-api", "orders-api"]
-        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = mock_blast_radius
+        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = (
+            mock_blast_radius
+        )
 
         response_blast = client.post(
             "/api/v1/bob/blast-radius",
@@ -223,9 +229,19 @@ class TestValidationScenarios:
 
         # Mock Blast Radius returning 3 affected services
         mock_blast_radius = Mock()
-        mock_blast_radius.affected_files = ["db/models/user.py", "src/auth/service.py", "src/billing/api.py"]
-        mock_blast_radius.affected_services = ["auth-service", "billing-api", "notification-service"]
-        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = mock_blast_radius
+        mock_blast_radius.affected_files = [
+            "db/models/user.py",
+            "src/auth/service.py",
+            "src/billing/api.py",
+        ]
+        mock_blast_radius.affected_services = [
+            "auth-service",
+            "billing-api",
+            "notification-service",
+        ]
+        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = (
+            mock_blast_radius
+        )
         mock_graph_query.return_value.__enter__.return_value.get_file_metrics.return_value = {
             "fan_in": 35,
             "fan_out": 0,
@@ -259,9 +275,7 @@ class TestValidationScenarios:
         # Mock dependency graph retrieval with 8 edges/nodes
         mock_graph_query.return_value.__enter__.return_value.get_dependencies.return_value = {
             "upstream": [],
-            "downstream": [
-                f"src/handlers/h{i}.py" for i in range(8)
-            ],
+            "downstream": [f"src/handlers/h{i}.py" for i in range(8)],
         }
 
         response = client.get(

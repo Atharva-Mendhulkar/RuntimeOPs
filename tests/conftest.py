@@ -5,11 +5,12 @@ Comprehensive pytest fixtures for all test types
 
 import asyncio
 import os
-import pytest
 import time
 from datetime import datetime, timedelta
-from typing import AsyncGenerator, Dict, Any, List
-from uuid import uuid4, UUID
+from typing import Any, AsyncGenerator, Dict, List
+from uuid import UUID, uuid4
+
+import pytest
 
 # Test containers
 pytest_plugins = ["pytest_asyncio"]
@@ -64,7 +65,7 @@ async def postgres_container(test_config):
     """PostgreSQL test container"""
     try:
         from testcontainers.postgres import PostgresContainer
-        
+
         with PostgresContainer("postgres:15") as postgres:
             # Update config with container details
             test_config["postgres"]["host"] = postgres.get_container_host_ip()
@@ -80,7 +81,7 @@ async def neo4j_container(test_config):
     """Neo4j test container"""
     try:
         from testcontainers.neo4j import Neo4jContainer
-        
+
         with Neo4jContainer("neo4j:5.13") as neo4j:
             test_config["neo4j"]["uri"] = neo4j.get_connection_url()
             yield neo4j
@@ -93,7 +94,7 @@ async def redis_container(test_config):
     """Redis test container"""
     try:
         from testcontainers.redis import RedisContainer
-        
+
         with RedisContainer("redis:7") as redis:
             test_config["redis"]["host"] = redis.get_container_host_ip()
             test_config["redis"]["port"] = int(redis.get_exposed_port(6379))
@@ -107,14 +108,16 @@ async def weaviate_container(test_config):
     """Weaviate test container"""
     try:
         from testcontainers.core.container import DockerContainer
-        
+
         weaviate = DockerContainer("semitechnologies/weaviate:1.24.0")
         weaviate.with_exposed_ports(8080)
         weaviate.with_env("AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED", "true")
         weaviate.with_env("PERSISTENCE_DATA_PATH", "/var/lib/weaviate")
-        
+
         with weaviate:
-            test_config["weaviate"]["url"] = f"http://{weaviate.get_container_host_ip()}:{weaviate.get_exposed_port(8080)}"
+            test_config["weaviate"][
+                "url"
+            ] = f"http://{weaviate.get_container_host_ip()}:{weaviate.get_exposed_port(8080)}"
             yield weaviate
     except ImportError:
         yield None
@@ -125,10 +128,10 @@ async def test_db(postgres_container, test_config):
     """Test database connection with cleanup"""
     import psycopg
     from psycopg.rows import dict_row
-    
+
     config = test_config["postgres"]
     conn_string = f"postgresql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
-    
+
     async with await psycopg.AsyncConnection.connect(conn_string, row_factory=dict_row) as conn:
         # Create test tables
         async with conn.cursor() as cur:
@@ -154,9 +157,9 @@ async def test_db(postgres_container, test_config):
                 )
             """)
             await conn.commit()
-        
+
         yield conn
-        
+
         # Cleanup
         async with conn.cursor() as cur:
             await cur.execute("TRUNCATE TABLE index_jobs CASCADE")
@@ -168,19 +171,16 @@ async def test_db(postgres_container, test_config):
 async def test_neo4j(neo4j_container, test_config):
     """Test Neo4j connection with cleanup"""
     from neo4j import AsyncGraphDatabase
-    
+
     config = test_config["neo4j"]
-    driver = AsyncGraphDatabase.driver(
-        config["uri"],
-        auth=(config["user"], config["password"])
-    )
-    
+    driver = AsyncGraphDatabase.driver(config["uri"], auth=(config["user"], config["password"]))
+
     yield driver
-    
+
     # Cleanup
     async with driver.session() as session:
         await session.run("MATCH (n) DETACH DELETE n")
-    
+
     await driver.close()
 
 
@@ -188,17 +188,14 @@ async def test_neo4j(neo4j_container, test_config):
 async def test_redis(redis_container, test_config):
     """Test Redis connection with cleanup"""
     import redis.asyncio as redis
-    
+
     config = test_config["redis"]
     client = redis.Redis(
-        host=config["host"],
-        port=config["port"],
-        db=config["db"],
-        decode_responses=True
+        host=config["host"], port=config["port"], db=config["db"], decode_responses=True
     )
-    
+
     yield client
-    
+
     # Cleanup
     await client.flushdb()
     await client.close()
@@ -208,10 +205,10 @@ async def test_redis(redis_container, test_config):
 async def test_weaviate(weaviate_container, test_config):
     """Test Weaviate connection with cleanup"""
     import weaviate
-    
+
     config = test_config["weaviate"]
     client = weaviate.Client(url=config["url"])
-    
+
     # Create test schema
     schema = {
         "class": "CodeUnit",
@@ -221,16 +218,16 @@ async def test_weaviate(weaviate_container, test_config):
             {"name": "symbol_name", "dataType": ["text"]},
             {"name": "content", "dataType": ["text"]},
             {"name": "language", "dataType": ["text"]},
-        ]
+        ],
     }
-    
+
     try:
         client.schema.create_class(schema)
     except Exception:
         pass  # Class might already exist
-    
+
     yield client
-    
+
     # Cleanup
     try:
         client.schema.delete_class("CodeUnit")
@@ -262,7 +259,7 @@ def goodbye():
     '''Say goodbye'''
     return 'Goodbye!'
 """,
-                "language": "python"
+                "language": "python",
             },
             {
                 "path": "src/utils.py",
@@ -275,7 +272,7 @@ def process_data(data):
     result = calculate(data['value'])
     return result
 """,
-                "language": "python"
+                "language": "python",
             },
             {
                 "path": "src/auth.py",
@@ -290,9 +287,9 @@ def process_data(data):
         # Verify token
         return True
 """,
-                "language": "python"
-            }
-        ]
+                "language": "python",
+            },
+        ],
     }
 
 
@@ -301,9 +298,10 @@ def large_repository() -> Dict[str, Any]:
     """Large repository for performance testing"""
     files = []
     for i in range(1000):
-        files.append({
-            "path": f"src/module_{i}.py",
-            "content": f"""def function_{i}():
+        files.append(
+            {
+                "path": f"src/module_{i}.py",
+                "content": f"""def function_{i}():
     '''Function {i}'''
     return {i}
 
@@ -314,15 +312,16 @@ class Class_{i}:
         '''Method {i}'''
         return {i}
 """,
-            "language": "python"
-        })
-    
+                "language": "python",
+            }
+        )
+
     return {
         "repo_id": "test/large-repo",
         "owner": "test",
         "name": "large-repo",
         "default_branch": "main",
-        "files": files
+        "files": files,
     }
 
 
@@ -338,7 +337,7 @@ def sample_code_units() -> List[Dict[str, Any]]:
             "line_end": 3,
             "imports": [],
             "calls": [],
-            "docstring": "Say hello"
+            "docstring": "Say hello",
         },
         {
             "file_path": "src/main.py",
@@ -348,7 +347,7 @@ def sample_code_units() -> List[Dict[str, Any]]:
             "line_end": 7,
             "imports": [],
             "calls": [],
-            "docstring": "Say goodbye"
+            "docstring": "Say goodbye",
         },
         {
             "file_path": "src/utils.py",
@@ -358,7 +357,7 @@ def sample_code_units() -> List[Dict[str, Any]]:
             "line_end": 3,
             "imports": [],
             "calls": [],
-            "docstring": "Calculate result"
+            "docstring": "Calculate result",
         },
         {
             "file_path": "src/utils.py",
@@ -368,8 +367,8 @@ def sample_code_units() -> List[Dict[str, Any]]:
             "line_end": 8,
             "imports": [],
             "calls": ["calculate"],
-            "docstring": "Process data"
-        }
+            "docstring": "Process data",
+        },
     ]
 
 
@@ -410,8 +409,9 @@ ValidationError: Invalid data"""
 async def test_client() -> AsyncGenerator:
     """FastAPI test client"""
     from httpx import AsyncClient
+
     from bob.main import app
-    
+
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
 
@@ -423,7 +423,7 @@ def test_user() -> Dict[str, Any]:
         "user_id": str(uuid4()),
         "username": "test_user",
         "email": "test@example.com",
-        "scopes": ["repo:read", "repo:write", "index:trigger"]
+        "scopes": ["repo:read", "repo:write", "index:trigger"],
     }
 
 
@@ -431,15 +431,12 @@ def test_user() -> Dict[str, Any]:
 def auth_headers(test_user) -> Dict[str, str]:
     """Authentication headers for API tests"""
     from bob.security.auth import create_access_token
-    
+
     token = create_access_token(
-        data={
-            "sub": test_user["user_id"],
-            "scopes": test_user["scopes"]
-        },
-        expires_delta=timedelta(hours=1)
+        data={"sub": test_user["user_id"], "scopes": test_user["scopes"]},
+        expires_delta=timedelta(hours=1),
     )
-    
+
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -447,15 +444,11 @@ def auth_headers(test_user) -> Dict[str, str]:
 def limited_auth_headers() -> Dict[str, str]:
     """Limited authentication headers (read-only)"""
     from bob.security.auth import create_access_token
-    
+
     token = create_access_token(
-        data={
-            "sub": str(uuid4()),
-            "scopes": ["repo:read"]
-        },
-        expires_delta=timedelta(hours=1)
+        data={"sub": str(uuid4()), "scopes": ["repo:read"]}, expires_delta=timedelta(hours=1)
     )
-    
+
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -467,28 +460,31 @@ def limited_auth_headers() -> Dict[str, str]:
 @pytest.fixture
 def performance_tracker():
     """Track performance metrics during tests"""
+
     class PerformanceTracker:
         def __init__(self):
             self.metrics = []
-        
+
         def record(self, operation: str, duration: float, **kwargs):
             """Record a performance metric"""
-            self.metrics.append({
-                "operation": operation,
-                "duration": duration,
-                "timestamp": datetime.utcnow().isoformat(),
-                **kwargs
-            })
-        
+            self.metrics.append(
+                {
+                    "operation": operation,
+                    "duration": duration,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    **kwargs,
+                }
+            )
+
         def get_stats(self, operation: str = None):
             """Get statistics for recorded metrics"""
             metrics = self.metrics
             if operation:
                 metrics = [m for m in metrics if m["operation"] == operation]
-            
+
             if not metrics:
                 return {}
-            
+
             durations = [m["duration"] for m in metrics]
             return {
                 "count": len(durations),
@@ -499,27 +495,28 @@ def performance_tracker():
                 "p95": sorted(durations)[int(len(durations) * 0.95)],
                 "p99": sorted(durations)[int(len(durations) * 0.99)],
             }
-    
+
     return PerformanceTracker()
 
 
 @pytest.fixture
 def timer():
     """Simple timer context manager"""
+
     class Timer:
         def __init__(self):
             self.start_time = None
             self.end_time = None
             self.duration = None
-        
+
         def __enter__(self):
             self.start_time = time.time()
             return self
-        
+
         def __exit__(self, *args):
             self.end_time = time.time()
             self.duration = self.end_time - self.start_time
-    
+
     return Timer
 
 
@@ -574,27 +571,28 @@ def path_traversal_payloads() -> List[str]:
 @pytest.fixture
 def chaos_controller():
     """Controller for chaos engineering tests"""
+
     class ChaosController:
         def __init__(self):
             self.failures = []
-        
+
         async def inject_latency(self, service: str, duration: float):
             """Inject latency into a service"""
             await asyncio.sleep(duration)
-        
+
         async def kill_service(self, service: str):
             """Simulate service failure"""
             self.failures.append(service)
-        
+
         async def restore_service(self, service: str):
             """Restore failed service"""
             if service in self.failures:
                 self.failures.remove(service)
-        
+
         def is_service_healthy(self, service: str) -> bool:
             """Check if service is healthy"""
             return service not in self.failures
-    
+
     return ChaosController()
 
 
@@ -607,14 +605,14 @@ def chaos_controller():
 def mock_github_api(mocker):
     """Mock GitHub API responses"""
     mock = mocker.patch("bob.ingestion.fetcher.GitHubFetcher")
-    
+
     mock.return_value.fetch_repository.return_value = {
         "owner": "test",
         "name": "repo",
         "default_branch": "main",
-        "files": []
+        "files": [],
     }
-    
+
     return mock
 
 
@@ -622,10 +620,10 @@ def mock_github_api(mocker):
 def mock_llm_api(mocker):
     """Mock LLM API responses"""
     mock = mocker.patch("bob.semantic.embedder.Embedder")
-    
+
     # Mock embedding generation
     mock.return_value.generate_embedding.return_value = [0.1] * 1536
-    
+
     return mock
 
 
@@ -633,7 +631,7 @@ def mock_llm_api(mocker):
 async def cleanup_databases(test_db, test_neo4j, test_redis, test_weaviate):
     """Cleanup all databases after test"""
     yield
-    
+
     # Cleanup is handled by individual fixtures
     pass
 

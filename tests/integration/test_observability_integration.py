@@ -197,9 +197,7 @@ class TestHealthCheckIntegration:
             return HealthCheckResult(status=HealthStatus.HEALTHY)
 
         async def degraded_check():
-            return HealthCheckResult(
-                status=HealthStatus.DEGRADED, message="Slow response"
-            )
+            return HealthCheckResult(status=HealthStatus.DEGRADED, message="Slow response")
 
         manager.register_check("service_a", healthy_check)
         manager.register_check("service_b", degraded_check)
@@ -250,9 +248,7 @@ class TestPerformanceMonitoringIntegration:
                 lines_of_code=10000,
             )
 
-            perf_monitor.track_db_query(
-                db_type="postgres", operation="read", duration=0.05
-            )
+            perf_monitor.track_db_query(db_type="postgres", operation="read", duration=0.05)
 
             perf_monitor.track_cache_operation(cache_type="redis", hit=True)
 
@@ -313,9 +309,7 @@ class TestObservabilityEndToEnd:
                         time.sleep(0.01)
 
                     # Record metrics
-                    metrics_manager.queries_total.labels(
-                        query_type="test", status="success"
-                    ).inc()
+                    metrics_manager.queries_total.labels(query_type="test", status="success").inc()
 
                     # Clear context
                     clear_context()

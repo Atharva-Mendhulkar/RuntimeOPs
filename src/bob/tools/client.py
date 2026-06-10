@@ -38,10 +38,10 @@ logger = logging.getLogger(__name__)
 class BobClient:
     """
     Bob client for RuntimeOps agents.
-    
+
     Provides both synchronous and asynchronous methods for all 10 Bob tools.
     Includes automatic retry logic, connection pooling, and comprehensive error handling.
-    
+
     Example:
         >>> client = BobClient(
         ...     base_url="http://localhost:8000",
@@ -62,7 +62,7 @@ class BobClient:
     ):
         """
         Initialize Bob client.
-        
+
         Args:
             base_url: Bob API base URL (defaults to settings.bob_api_url)
             api_key: API key for authentication (defaults to settings.bob_api_key)
@@ -70,16 +70,16 @@ class BobClient:
             max_retries: Maximum number of retries (default: 3)
         """
         settings = get_settings()
-        
+
         self.base_url = (base_url or settings.bob_api_url).rstrip("/")
         self.api_key = api_key or settings.bob_api_key
         self.timeout = timeout
         self.max_retries = max_retries
-        
+
         # Connection pooling
         self._sync_client: httpx.Client | None = None
         self._async_client: httpx.AsyncClient | None = None
-        
+
         logger.info(f"BobClient initialized: base_url={self.base_url}")
 
     def __enter__(self):
@@ -125,7 +125,7 @@ class BobClient:
             raise ResourceNotFoundError("Resource not found")
         elif response.status_code >= 500:
             raise QueryError(f"Server error: {response.status_code}")
-        
+
         response.raise_for_status()
         return response.json()
 
@@ -146,17 +146,17 @@ class BobClient:
     ) -> list[CodeSearchResult]:
         """
         Synchronous semantic code search.
-        
+
         Args:
             query: Natural language search query
             repo_id: Repository UUID
             k: Number of results to return (default: 10)
-        
+
         Returns:
             List of CodeSearchResult objects
         """
         client = self._sync_client or httpx.Client(timeout=self.timeout)
-        
+
         try:
             response = client.post(
                 f"{self.base_url}/api/v1/bob/search",
@@ -164,7 +164,7 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             return [
                 CodeSearchResult(
                     file_path=r["file_path"],
@@ -198,17 +198,17 @@ class BobClient:
     ) -> list[CodeSearchResult]:
         """
         Asynchronous semantic code search.
-        
+
         Args:
             query: Natural language search query
             repo_id: Repository UUID
             k: Number of results to return (default: 10)
-        
+
         Returns:
             List of CodeSearchResult objects
         """
         client = self._async_client or httpx.AsyncClient(timeout=self.timeout)
-        
+
         try:
             response = await client.post(
                 f"{self.base_url}/api/v1/bob/search",
@@ -216,7 +216,7 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             return [
                 CodeSearchResult(
                     file_path=r["file_path"],
@@ -253,7 +253,7 @@ class BobClient:
     ) -> list[StackFrame]:
         """Synchronous stack trace resolution"""
         client = self._sync_client or httpx.Client(timeout=self.timeout)
-        
+
         try:
             response = client.post(
                 f"{self.base_url}/api/v1/bob/resolve-stack-trace",
@@ -261,7 +261,7 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             return [
                 StackFrame(
                     file_path=f.get("file_path"),
@@ -289,7 +289,7 @@ class BobClient:
     ) -> list[StackFrame]:
         """Asynchronous stack trace resolution"""
         client = self._async_client or httpx.AsyncClient(timeout=self.timeout)
-        
+
         try:
             response = await client.post(
                 f"{self.base_url}/api/v1/bob/resolve-stack-trace",
@@ -297,7 +297,7 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             return [
                 StackFrame(
                     file_path=f.get("file_path"),
@@ -331,7 +331,7 @@ class BobClient:
     ) -> DependencyGraph:
         """Synchronous dependency graph retrieval"""
         client = self._sync_client or httpx.Client(timeout=self.timeout)
-        
+
         try:
             response = client.get(
                 f"{self.base_url}/api/v1/bob/dependency-graph",
@@ -344,9 +344,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import DependencyEdge
-            
+
             edges = [
                 DependencyEdge(
                     source=e["source"],
@@ -356,12 +356,12 @@ class BobClient:
                 )
                 for e in data["edges"]
             ]
-            
+
             nodes = {file_path}
             for edge in edges:
                 nodes.add(edge.source)
                 nodes.add(edge.target)
-            
+
             return DependencyGraph(
                 root_file=file_path,
                 edges=edges,
@@ -388,7 +388,7 @@ class BobClient:
     ) -> DependencyGraph:
         """Asynchronous dependency graph retrieval"""
         client = self._async_client or httpx.AsyncClient(timeout=self.timeout)
-        
+
         try:
             response = await client.get(
                 f"{self.base_url}/api/v1/bob/dependency-graph",
@@ -401,9 +401,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import DependencyEdge
-            
+
             edges = [
                 DependencyEdge(
                     source=e["source"],
@@ -413,12 +413,12 @@ class BobClient:
                 )
                 for e in data["edges"]
             ]
-            
+
             nodes = {file_path}
             for edge in edges:
                 nodes.add(edge.source)
                 nodes.add(edge.target)
-            
+
             return DependencyGraph(
                 root_file=file_path,
                 edges=edges,
@@ -447,7 +447,7 @@ class BobClient:
     ) -> BlastRadiusResult:
         """Synchronous blast radius computation"""
         client = self._sync_client or httpx.Client(timeout=self.timeout)
-        
+
         try:
             response = client.post(
                 f"{self.base_url}/api/v1/bob/blast-radius",
@@ -455,9 +455,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import ImpactedFile
-            
+
             impacted_files = [
                 ImpactedFile(
                     file_path=f["file_path"],
@@ -468,7 +468,7 @@ class BobClient:
                 )
                 for f in data["impacted_files"]
             ]
-            
+
             return BlastRadiusResult(
                 changed_files=data["changed_files"],
                 impacted_files=impacted_files,
@@ -491,7 +491,7 @@ class BobClient:
     ) -> BlastRadiusResult:
         """Asynchronous blast radius computation"""
         client = self._async_client or httpx.AsyncClient(timeout=self.timeout)
-        
+
         try:
             response = await client.post(
                 f"{self.base_url}/api/v1/bob/blast-radius",
@@ -499,9 +499,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import ImpactedFile
-            
+
             impacted_files = [
                 ImpactedFile(
                     file_path=f["file_path"],
@@ -512,7 +512,7 @@ class BobClient:
                 )
                 for f in data["impacted_files"]
             ]
-            
+
             return BlastRadiusResult(
                 changed_files=data["changed_files"],
                 impacted_files=impacted_files,
@@ -539,7 +539,7 @@ class BobClient:
     ) -> FileContent:
         """Synchronous file content retrieval"""
         client = self._sync_client or httpx.Client(timeout=self.timeout)
-        
+
         try:
             response = client.get(
                 f"{self.base_url}/api/v1/bob/file",
@@ -547,9 +547,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import FileSymbol
-            
+
             symbols = [
                 FileSymbol(
                     name=s["name"],
@@ -560,7 +560,7 @@ class BobClient:
                 )
                 for s in data.get("symbols", [])
             ]
-            
+
             return FileContent(
                 file_path=data["file_path"],
                 content=data["content"],
@@ -586,7 +586,7 @@ class BobClient:
     ) -> FileContent:
         """Asynchronous file content retrieval"""
         client = self._async_client or httpx.AsyncClient(timeout=self.timeout)
-        
+
         try:
             response = await client.get(
                 f"{self.base_url}/api/v1/bob/file",
@@ -594,9 +594,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import FileSymbol
-            
+
             symbols = [
                 FileSymbol(
                     name=s["name"],
@@ -607,7 +607,7 @@ class BobClient:
                 )
                 for s in data.get("symbols", [])
             ]
-            
+
             return FileContent(
                 file_path=data["file_path"],
                 content=data["content"],
@@ -637,7 +637,7 @@ class BobClient:
     ) -> CommitDiff:
         """Synchronous commit diff retrieval"""
         client = self._sync_client or httpx.Client(timeout=self.timeout)
-        
+
         try:
             response = client.get(
                 f"{self.base_url}/api/v1/bob/commit-diff",
@@ -645,9 +645,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import ChangedFile
-            
+
             changed_files = [
                 ChangedFile(
                     file_path=f["file_path"],
@@ -659,7 +659,7 @@ class BobClient:
                 )
                 for f in data.get("changed_files", [])
             ]
-            
+
             return CommitDiff(
                 commit_sha=data["commit_sha"],
                 author=data.get("author"),
@@ -685,7 +685,7 @@ class BobClient:
     ) -> CommitDiff:
         """Asynchronous commit diff retrieval"""
         client = self._async_client or httpx.AsyncClient(timeout=self.timeout)
-        
+
         try:
             response = await client.get(
                 f"{self.base_url}/api/v1/bob/commit-diff",
@@ -693,9 +693,9 @@ class BobClient:
                 headers=self._get_headers(),
             )
             data = self._handle_response(response)
-            
+
             from bob.tools.models import ChangedFile
-            
+
             changed_files = [
                 ChangedFile(
                     file_path=f["file_path"],
@@ -707,7 +707,7 @@ class BobClient:
                 )
                 for f in data.get("changed_files", [])
             ]
-            
+
             return CommitDiff(
                 commit_sha=data["commit_sha"],
                 author=data.get("author"),
@@ -728,41 +728,49 @@ class BobClient:
     def get_test_map(self, source_files: list[str], repo_id: str) -> list[str]:
         """Get test files for source files (uses bob_tools.get_test_map)"""
         from bob.tools.bob_tools import get_test_map
+
         return get_test_map(source_files, repo_id)
 
     async def get_test_map_async(self, source_files: list[str], repo_id: str) -> list[str]:
         """Async get test files for source files"""
         from bob.tools.bob_tools import get_test_map
+
         return await asyncio.to_thread(get_test_map, source_files, repo_id)
 
     def get_conventions(self, service_path: str, repo_id: str) -> dict[str, Any]:
         """Get coding conventions for service (uses bob_tools.get_conventions)"""
         from bob.tools.bob_tools import get_conventions
+
         return get_conventions(service_path, repo_id)
 
     async def get_conventions_async(self, service_path: str, repo_id: str) -> dict[str, Any]:
         """Async get coding conventions for service"""
         from bob.tools.bob_tools import get_conventions
+
         return await asyncio.to_thread(get_conventions, service_path, repo_id)
 
     def get_risk_context(self, files: list[str], repo_id: str) -> list[RiskContext]:
         """Get risk context for files (uses bob_tools.get_risk_context)"""
         from bob.tools.bob_tools import get_risk_context
+
         return get_risk_context(files, repo_id)
 
     async def get_risk_context_async(self, files: list[str], repo_id: str) -> list[RiskContext]:
         """Async get risk context for files"""
         from bob.tools.bob_tools import get_risk_context
+
         return await asyncio.to_thread(get_risk_context, files, repo_id)
 
     def trigger_reindex(self, repo_id: str, scope: str = "incremental") -> str:
         """Trigger repository reindex (uses bob_tools.trigger_reindex)"""
         from bob.tools.bob_tools import trigger_reindex
+
         return trigger_reindex(repo_id, scope)
 
     async def trigger_reindex_async(self, repo_id: str, scope: str = "incremental") -> str:
         """Async trigger repository reindex"""
         from bob.tools.bob_tools import trigger_reindex
+
         return await asyncio.to_thread(trigger_reindex, repo_id, scope)
 
 

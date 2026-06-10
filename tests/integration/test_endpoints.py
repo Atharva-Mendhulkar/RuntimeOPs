@@ -3,21 +3,20 @@ IBM Bob - Integration Tests for API Endpoints
 Tests for all 8 REST endpoints with mocked backends
 """
 
-import pytest
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
 
+import pytest
 from fastapi.testclient import TestClient
 
-from bob.main import app
 from bob.api.models import (
+    BatchRequest,
+    BlastRadiusRequest,
     SearchRequest,
     StackTraceRequest,
-    BlastRadiusRequest,
-    BatchRequest,
     SubQuery,
 )
-
+from bob.main import app
 
 # Create test client
 client = TestClient(app)
@@ -45,17 +44,18 @@ def mock_gateway():
     """Mock query gateway"""
     with patch("bob.api.rest.get_gateway") as mock:
         gateway = Mock()
-        
+
         async def mock_authenticate_request(request, authorization=None):
             if not authorization:
                 from fastapi import HTTPException
+
                 raise HTTPException(status_code=401, detail="Missing authorization header")
             return {
                 "repo_id": str(uuid4()),
                 "org_id": "test_org",
                 "exp": 9999999999,
             }
-            
+
         gateway.authenticate_request = mock_authenticate_request
         mock.return_value = gateway
         yield gateway
@@ -111,7 +111,7 @@ class TestSearchEndpoint:
         mock_result.content = "def authenticate(): pass"
         mock_result.language = "python"
         mock_result.confidence = 0.9
-        
+
         mock_assembler.assemble_search_results = AsyncMock(return_value=[mock_result])
 
         # Make request
@@ -276,8 +276,10 @@ class TestBlastRadiusEndpoint:
         mock_blast_radius = Mock()
         mock_blast_radius.affected_files = ["src/handler.py", "src/service.py"]
         mock_blast_radius.affected_services = ["api-service"]
-        
-        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = mock_blast_radius
+
+        mock_graph_query.return_value.__enter__.return_value.compute_blast_radius.return_value = (
+            mock_blast_radius
+        )
         mock_graph_query.return_value.__enter__.return_value.get_file_metrics.return_value = {
             "fan_in": 5,
             "fan_out": 3,
@@ -409,9 +411,7 @@ class TestHealthEndpoint:
         mock_registry.return_value.__enter__.return_value.get_health_metrics.return_value = {
             "total_repositories": 5
         }
-        mock_cache.return_value.__enter__.return_value.get_stats.return_value = {
-            "hit_rate": 0.85
-        }
+        mock_cache.return_value.__enter__.return_value.get_stats.return_value = {"hit_rate": 0.85}
 
         # Make request
         response = client.get("/api/v1/bob/health")
@@ -437,7 +437,7 @@ class TestHealthEndpoint:
         """Test health check with some services unhealthy"""
         # Mock Neo4j as unhealthy
         mock_graph_query.return_value.__enter__.side_effect = Exception("Connection failed")
-        
+
         # Other services healthy
         mock_vector_store.return_value.__enter__.return_value.get_stats.return_value = {}
         mock_registry.return_value.__enter__.return_value.get_health_metrics.return_value = {}
@@ -479,10 +479,10 @@ class TestBatchEndpoint:
         mock_embedding = Mock()
         mock_embedding.vector = [0.1] * 1536
         mock_embedder.return_value.__enter__.return_value.embed_text.return_value = mock_embedding
-        
+
         mock_vector_store.return_value.__enter__.return_value.search.return_value = []
         mock_assembler.assemble_search_results = AsyncMock(return_value=[])
-        
+
         mock_graph_query.return_value.__enter__.return_value.get_dependencies.return_value = {
             "upstream": [],
             "downstream": [],

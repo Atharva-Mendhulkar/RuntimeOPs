@@ -89,6 +89,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     grpc_server = None
     try:
         from bob.api.grpc_server import GRPCServer
+
         grpc_server = GRPCServer(host=settings.api_host, port=settings.grpc_port)
         await grpc_server.start()
         logger.info("grpc_server_started", port=settings.grpc_port)
@@ -112,7 +113,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     logger.info("shutting_down_bob")
     print("🛑 Shutting down IBM Bob")
-    
+
     # Stop gRPC server
     try:
         grpc_server = getattr(app.state, "grpc_server", None)
@@ -123,7 +124,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         logger.error("grpc_server_shutdown_failed", error=str(e), exc_info=True)
         print(f"⚠️  gRPC server shutdown failed: {e}")
-    
+
     # Close query gateway
     try:
         gateway = get_gateway()
@@ -192,10 +193,10 @@ async def add_request_id(request: Request, call_next):
     """Add unique request ID to each request"""
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
-    
+
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
-    
+
     return response
 
 
@@ -234,13 +235,13 @@ async def readiness_check() -> JSONResponse:
     Returns 200 if service is ready to accept traffic.
     """
     from fastapi import HTTPException
-    
+
     health_manager = HealthCheckManager.get_instance()
     result = await health_manager.readiness()
-    
+
     if result["status"] == "unhealthy":
         raise HTTPException(status_code=503, detail=result)
-    
+
     return JSONResponse(content=result, status_code=200)
 
 
@@ -251,13 +252,13 @@ async def startup_check() -> JSONResponse:
     Returns 200 if service has completed initialization.
     """
     from fastapi import HTTPException
-    
+
     health_manager = HealthCheckManager.get_instance()
     result = await health_manager.startup()
-    
+
     if result["status"] == "unhealthy":
         raise HTTPException(status_code=503, detail=result)
-    
+
     return JSONResponse(content=result, status_code=200)
 
 
@@ -268,20 +269,14 @@ async def metrics_endpoint():
     Returns metrics in Prometheus format.
     """
     from fastapi import Response
-    
+
     if not settings.enable_metrics:
-        return JSONResponse(
-            content={"error": "Metrics disabled"},
-            status_code=404
-        )
-    
+        return JSONResponse(content={"error": "Metrics disabled"}, status_code=404)
+
     metrics_manager = get_metrics_manager()
     metrics_output = metrics_manager.generate_metrics()
-    
-    return Response(
-        content=metrics_output,
-        media_type=metrics_manager.get_content_type()
-    )
+
+    return Response(content=metrics_output, media_type=metrics_manager.get_content_type())
 
 
 # Legacy endpoints for backward compatibility

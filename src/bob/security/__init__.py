@@ -22,8 +22,8 @@ from bob.security.rbac import (
     validate_scopes,
 )
 from bob.security.secrets import (
-    SecretString,
     SecretsManager,
+    SecretString,
     generate_encryption_key,
     mask_secret,
     sanitize_for_logging,

@@ -2,34 +2,34 @@
 Unit tests for Bob tools
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
+import pytest
+
+from bob.exceptions import QueryError, ResourceNotFoundError
 from bob.tools.bob_tools import (
-    semantic_search,
-    resolve_stack_trace,
-    get_dependency_graph,
     get_blast_radius,
-    get_file_content,
     get_commit_diff,
-    get_test_map,
     get_conventions,
+    get_dependency_graph,
+    get_file_content,
     get_risk_context,
+    get_test_map,
+    resolve_stack_trace,
+    semantic_search,
     trigger_reindex,
 )
 from bob.tools.client import BobClient
 from bob.tools.models import (
-    CodeSearchResult,
-    StackFrame,
-    DependencyGraph,
     BlastRadiusResult,
-    FileContent,
+    CodeSearchResult,
     CommitDiff,
+    DependencyGraph,
+    FileContent,
     RiskContext,
+    StackFrame,
 )
-from bob.exceptions import QueryError, ResourceNotFoundError
-
 
 # ============================================================================
 # Test Fixtures
@@ -88,14 +88,14 @@ def test_semantic_search_success(mock_httpx_client, repo_id):
         ],
         "total": 1,
     }
-    
+
     mock_client = Mock()
     mock_client.post.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     # Execute
     results = semantic_search("authentication", repo_id, k=10)
-    
+
     # Assert
     assert len(results) == 1
     assert isinstance(results[0], CodeSearchResult)
@@ -108,13 +108,13 @@ def test_semantic_search_empty_results(mock_httpx_client, repo_id):
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.json.return_value = {"results": [], "total": 0}
-    
+
     mock_client = Mock()
     mock_client.post.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     results = semantic_search("nonexistent", repo_id)
-    
+
     assert len(results) == 0
 
 
@@ -141,14 +141,14 @@ def test_resolve_stack_trace_success(mock_httpx_client, repo_id):
         "total_frames": 1,
         "resolved_frames": 1,
     }
-    
+
     mock_client = Mock()
     mock_client.post.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     trace = 'File "src/app.py", line 42, in handler'
     frames = resolve_stack_trace(trace, repo_id)
-    
+
     assert len(frames) == 1
     assert isinstance(frames[0], StackFrame)
     assert frames[0].file_path == "src/app.py"
@@ -176,13 +176,13 @@ def test_get_dependency_graph_success(mock_httpx_client, repo_id):
         "node_count": 2,
         "edge_count": 1,
     }
-    
+
     mock_client = Mock()
     mock_client.get.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     graph = get_dependency_graph("src/main.py", repo_id, hops=3)
-    
+
     assert isinstance(graph, DependencyGraph)
     assert graph.root_file == "src/main.py"
     assert len(graph.edges) == 1
@@ -212,13 +212,13 @@ def test_get_blast_radius_success(mock_httpx_client, repo_id):
         "total_impacted": 1,
         "affected_services": ["service-a"],
     }
-    
+
     mock_client = Mock()
     mock_client.post.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     result = get_blast_radius(["src/db.py"], repo_id)
-    
+
     assert isinstance(result, BlastRadiusResult)
     assert len(result.impacted_files) == 1
     assert result.impacted_files[0].acs_score == 0.85
@@ -248,13 +248,13 @@ def test_get_file_content_success(mock_httpx_client, repo_id):
         ],
         "imports": [],
     }
-    
+
     mock_client = Mock()
     mock_client.get.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     content = get_file_content("src/main.py", repo_id)
-    
+
     assert isinstance(content, FileContent)
     assert content.file_path == "src/main.py"
     assert content.language == "python"
@@ -265,11 +265,11 @@ def test_get_file_content_not_found(mock_httpx_client, repo_id):
     """Test file not found"""
     mock_response = Mock()
     mock_response.status_code = 404
-    
+
     mock_client = Mock()
     mock_client.get.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     with pytest.raises(ResourceNotFoundError):
         get_file_content("nonexistent.py", repo_id)
 
@@ -300,13 +300,13 @@ def test_get_commit_diff_success(mock_httpx_client, repo_id):
         "total_additions": 5,
         "total_deletions": 2,
     }
-    
+
     mock_client = Mock()
     mock_client.get.return_value = mock_response
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     diff = get_commit_diff("abc123", repo_id)
-    
+
     assert isinstance(diff, CommitDiff)
     assert diff.commit_sha == "abc123"
     assert len(diff.changed_files) == 1
@@ -324,9 +324,9 @@ def test_get_test_map_success(mock_graph_query, repo_id):
         "downstream": ["tests/test_main.py", "tests/test_utils.py"]
     }
     mock_graph_query.return_value.__enter__.return_value = mock_query
-    
+
     tests = get_test_map(["src/main.py"], repo_id)
-    
+
     assert isinstance(tests, list)
     assert len(tests) == 2
     assert all("test" in t for t in tests)
@@ -343,9 +343,9 @@ def test_get_conventions_success(mock_file_cache, repo_id):
     mock_cache.get.return_value = None  # Cache miss
     mock_cache.set.return_value = None
     mock_file_cache.return_value.__enter__.return_value = mock_cache
-    
+
     conventions = get_conventions("services/auth", repo_id)
-    
+
     assert isinstance(conventions, dict)
     assert "naming" in conventions
     assert "error_handling" in conventions
@@ -363,13 +363,11 @@ def test_get_risk_context_success(mock_graph_query, repo_id):
         "fan_in": 5,
         "fan_out": 3,
     }
-    mock_query.get_dependencies.return_value = {
-        "downstream": ["file1.py", "file2.py"]
-    }
+    mock_query.get_dependencies.return_value = {"downstream": ["file1.py", "file2.py"]}
     mock_graph_query.return_value.__enter__.return_value = mock_query
-    
+
     contexts = get_risk_context(["src/main.py"], repo_id)
-    
+
     assert isinstance(contexts, list)
     assert len(contexts) == 1
     assert isinstance(contexts[0], RiskContext)
@@ -388,9 +386,9 @@ def test_trigger_reindex_success(mock_file_cache, repo_id):
     mock_cache.redis_client.lpush.return_value = None
     mock_cache.set.return_value = None
     mock_file_cache.return_value.__enter__.return_value = mock_cache
-    
+
     job_id = trigger_reindex(repo_id, scope="incremental")
-    
+
     assert isinstance(job_id, str)
     assert len(job_id) > 0
 
@@ -399,7 +397,7 @@ def test_trigger_reindex_invalid_scope(mock_file_cache, repo_id):
     """Test reindex with invalid scope"""
     mock_cache = Mock()
     mock_file_cache.return_value.__enter__.return_value = mock_cache
-    
+
     with pytest.raises(QueryError):
         trigger_reindex(repo_id, scope="invalid")
 
@@ -416,7 +414,7 @@ def test_bob_client_initialization():
         api_key="test-key",
         timeout=30.0,
     )
-    
+
     assert client.base_url == "http://localhost:8000"
     assert client.api_key == "test-key"
     assert client.timeout == 30.0
@@ -426,7 +424,7 @@ def test_bob_client_context_manager():
     """Test BobClient as context manager"""
     with BobClient() as client:
         assert client._sync_client is not None
-    
+
     # Client should be closed after context
     assert client._sync_client is None
 
@@ -436,7 +434,7 @@ async def test_bob_client_async_context_manager():
     """Test BobClient as async context manager"""
     async with BobClient() as client:
         assert client._async_client is not None
-    
+
     # Client should be closed after context
     assert client._async_client is None
 
@@ -459,14 +457,14 @@ def test_bob_client_semantic_search(mock_httpx_client, repo_id):
             }
         ]
     }
-    
+
     mock_client = Mock()
     mock_client.post.return_value = mock_response
     mock_httpx_client.return_value = mock_client
-    
+
     client = BobClient()
     results = client.semantic_search("auth", repo_id)
-    
+
     assert len(results) == 1
     assert results[0].symbol_name == "authenticate"
 
@@ -479,11 +477,11 @@ def test_bob_client_semantic_search(mock_httpx_client, repo_id):
 def test_semantic_search_timeout(mock_httpx_client, repo_id):
     """Test semantic search timeout handling"""
     import httpx
-    
+
     mock_client = Mock()
     mock_client.post.side_effect = httpx.TimeoutException("Timeout")
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     with pytest.raises(Exception):  # Should raise QueryTimeoutError
         semantic_search("query", repo_id)
 
@@ -491,11 +489,11 @@ def test_semantic_search_timeout(mock_httpx_client, repo_id):
 def test_semantic_search_http_error(mock_httpx_client, repo_id):
     """Test semantic search HTTP error handling"""
     import httpx
-    
+
     mock_client = Mock()
     mock_client.post.side_effect = httpx.HTTPError("Server error")
     mock_httpx_client.return_value.__enter__.return_value = mock_client
-    
+
     with pytest.raises(Exception):  # Should raise QueryError
         semantic_search("query", repo_id)
 

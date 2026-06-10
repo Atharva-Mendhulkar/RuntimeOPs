@@ -55,9 +55,7 @@ class TracingManager:
         if settings.environment == "development":
             # Use console exporter for development
             console_exporter = ConsoleSpanExporter()
-            self._tracer_provider.add_span_processor(
-                BatchSpanProcessor(console_exporter)
-            )
+            self._tracer_provider.add_span_processor(BatchSpanProcessor(console_exporter))
 
         # Add OTLP exporter for production/staging
         if settings.otel_exporter_otlp_endpoint:

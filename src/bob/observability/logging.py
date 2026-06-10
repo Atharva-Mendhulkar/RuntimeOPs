@@ -63,7 +63,11 @@ class LoggingManager:
                 # Filter by log level
                 filter_by_level,
                 # Render as JSON
-                JSONRenderer() if settings.environment != "development" else structlog.dev.ConsoleRenderer(),
+                (
+                    JSONRenderer()
+                    if settings.environment != "development"
+                    else structlog.dev.ConsoleRenderer()
+                ),
             ],
             wrapper_class=structlog.make_filtering_bound_logger(
                 getattr(logging, settings.log_level.upper())

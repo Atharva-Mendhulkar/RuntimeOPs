@@ -72,7 +72,7 @@ class GitBlame:
 class GraphQuery:
     """
     Executes Cypher queries on Neo4j graph.
-    
+
     Responsibilities:
     - Dependency traversal (N-hop upstream/downstream)
     - Blast radius computation
@@ -86,7 +86,7 @@ class GraphQuery:
     def __init__(self, cache_ttl: int = 300) -> None:
         """
         Initialize the graph query layer.
-        
+
         Args:
             cache_ttl: Cache TTL in seconds (default: 5 minutes)
         """
@@ -137,28 +137,24 @@ class GraphQuery:
     ) -> dict[str, list[str]]:
         """
         Get dependencies for a file.
-        
+
         Args:
             repo_id: Repository UUID
             file_path: File path to analyze
             direction: "upstream", "downstream", or "both"
             max_hops: Maximum number of hops to traverse
-            
+
         Returns:
             Dictionary with upstream and downstream dependencies
         """
         result = {"upstream": [], "downstream": []}
-        
+
         if direction in ("upstream", "both"):
-            result["upstream"] = self._get_upstream_dependencies(
-                repo_id, file_path, max_hops
-            )
-        
+            result["upstream"] = self._get_upstream_dependencies(repo_id, file_path, max_hops)
+
         if direction in ("downstream", "both"):
-            result["downstream"] = self._get_downstream_dependencies(
-                repo_id, file_path, max_hops
-            )
-        
+            result["downstream"] = self._get_downstream_dependencies(repo_id, file_path, max_hops)
+
         logger.info(
             f"Found {len(result['upstream'])} upstream, "
             f"{len(result['downstream'])} downstream dependencies for {file_path}"
@@ -180,7 +176,7 @@ class GraphQuery:
                length(path) as distance
         ORDER BY distance
         """ % max_hops
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -205,7 +201,7 @@ class GraphQuery:
                length(path) as distance
         ORDER BY distance
         """ % max_hops
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -223,12 +219,12 @@ class GraphQuery:
     ) -> BlastRadiusResult:
         """
         Compute blast radius for changed files.
-        
+
         Args:
             repo_id: Repository UUID
             changed_files: List of changed file paths
             max_hops: Maximum number of hops to traverse
-            
+
         Returns:
             Blast radius result with affected files and services
         """
@@ -242,7 +238,7 @@ class GraphQuery:
         RETURN DISTINCT affected.file_path as file_path,
                service.name as service_name
         """ % max_hops
-        
+
         try:
             with self._driver.session() as session:
                 result = session.run(
@@ -251,16 +247,16 @@ class GraphQuery:
                     changed_files=changed_files,
                     timeout=self._query_timeout,
                 )
-                
+
                 affected_files = []
                 affected_services = set()
-                
+
                 for record in result:
                     if record["file_path"]:
                         affected_files.append(record["file_path"])
                     if record["service_name"]:
                         affected_services.add(record["service_name"])
-                
+
                 blast_radius = BlastRadiusResult(
                     changed_files=changed_files,
                     affected_files=affected_files,
@@ -268,14 +264,14 @@ class GraphQuery:
                     total_affected=len(affected_files),
                     max_hops=max_hops,
                 )
-                
+
                 logger.info(
                     f"Blast radius: {len(changed_files)} changed files -> "
                     f"{len(affected_files)} affected files, "
                     f"{len(affected_services)} affected services"
                 )
                 return blast_radius
-        
+
         except Neo4jError as e:
             if "timeout" in str(e).lower():
                 raise QueryTimeoutError(
@@ -287,10 +283,10 @@ class GraphQuery:
     def get_service_topology(self, repo_id: UUID) -> ServiceTopology:
         """
         Get service topology (all services and inter-service dependencies).
-        
+
         Args:
             repo_id: Repository UUID
-            
+
         Returns:
             Service topology information
         """
@@ -303,7 +299,7 @@ class GraphQuery:
                s.file_count as file_count,
                s.dependencies as dependencies
         """
-        
+
         # Get inter-service edges
         edges_query = """
         MATCH (s1:Service {repo_id: $repo_id})-[:CONTAINS]->(f1:File)
@@ -313,7 +309,7 @@ class GraphQuery:
                s2.name as target_service,
                count(*) as import_count
         """
-        
+
         with self._driver.session() as session:
             # Get services
             services_result = session.run(
@@ -322,7 +318,7 @@ class GraphQuery:
                 timeout=self._query_timeout,
             )
             services = [dict(record) for record in services_result]
-            
+
             # Get edges
             edges_result = session.run(
                 edges_query,
@@ -330,14 +326,14 @@ class GraphQuery:
                 timeout=self._query_timeout,
             )
             edges = [dict(record) for record in edges_result]
-        
+
         topology = ServiceTopology(
             services=services,
             inter_service_edges=edges,
             total_services=len(services),
             total_edges=len(edges),
         )
-        
+
         logger.info(
             f"Service topology: {topology.total_services} services, "
             f"{topology.total_edges} inter-service edges"
@@ -353,26 +349,26 @@ class GraphQuery:
     ) -> list[CallChain]:
         """
         Trace call chains between two functions.
-        
+
         Args:
             repo_id: Repository UUID
             start_function: Starting function (format: "file_path::function_name")
             end_function: Ending function (format: "file_path::function_name")
             max_hops: Maximum chain length
-            
+
         Returns:
             List of call chains
         """
         # Parse function identifiers
         start_parts = start_function.split("::")
         end_parts = end_function.split("::")
-        
+
         if len(start_parts) != 2 or len(end_parts) != 2:
             raise QueryError(
                 "Invalid function format. Use 'file_path::function_name'",
                 details={"start": start_function, "end": end_function},
             )
-        
+
         query = """
         MATCH (start:Symbol {
             repo_id: $repo_id,
@@ -390,7 +386,7 @@ class GraphQuery:
         ORDER BY length
         LIMIT 10
         """ % max_hops
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -401,7 +397,7 @@ class GraphQuery:
                 end_name=end_parts[1],
                 timeout=self._query_timeout,
             )
-            
+
             chains = []
             for record in result:
                 chains.append(
@@ -412,7 +408,7 @@ class GraphQuery:
                         length=record["length"],
                     )
                 )
-        
+
         logger.info(f"Found {len(chains)} call chains from {start_function} to {end_function}")
         return chains
 
@@ -424,12 +420,12 @@ class GraphQuery:
     ) -> GitBlame:
         """
         Get git blame information for a file.
-        
+
         Args:
             repo_id: Repository UUID
             file_path: File path
             line_range: Optional line range (start, end)
-            
+
         Returns:
             Git blame information
         """
@@ -446,7 +442,7 @@ class GraphQuery:
                m.deletions as deletions
         ORDER BY c.commit_date DESC
         """
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -454,10 +450,10 @@ class GraphQuery:
                 file_path=file_path,
                 timeout=self._query_timeout,
             )
-            
+
             commits = []
             line_ranges_map = {}
-            
+
             for record in result:
                 commit_data = {
                     "commit_hash": record["commit_hash"],
@@ -469,15 +465,15 @@ class GraphQuery:
                     "deletions": record["deletions"],
                 }
                 commits.append(commit_data)
-                
+
                 if record["line_ranges"]:
                     line_ranges_map[record["commit_hash"]] = record["line_ranges"]
-        
+
         # Filter by line range if specified
         if line_range:
             filtered_commits = []
             filtered_line_ranges = {}
-            
+
             for commit in commits:
                 commit_hash = commit["commit_hash"]
                 if commit_hash in line_ranges_map:
@@ -488,17 +484,17 @@ class GraphQuery:
                             filtered_commits.append(commit)
                             filtered_line_ranges[commit_hash] = line_ranges_map[commit_hash]
                             break
-            
+
             commits = filtered_commits
             line_ranges_map = filtered_line_ranges
-        
+
         blame = GitBlame(
             file_path=file_path,
             commits=commits,
             total_commits=len(commits),
             line_ranges=line_ranges_map,
         )
-        
+
         logger.info(f"Git blame for {file_path}: {len(commits)} commits")
         return blame
 
@@ -511,13 +507,13 @@ class GraphQuery:
     ) -> list[DependencyPath]:
         """
         Find dependency paths between two files.
-        
+
         Args:
             repo_id: Repository UUID
             source_file: Source file path
             target_file: Target file path
             max_hops: Maximum path length
-            
+
         Returns:
             List of dependency paths
         """
@@ -531,7 +527,7 @@ class GraphQuery:
         ORDER BY length
         LIMIT 10
         """ % max_hops
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -540,7 +536,7 @@ class GraphQuery:
                 target_file=target_file,
                 timeout=self._query_timeout,
             )
-            
+
             paths = []
             for record in result:
                 paths.append(
@@ -552,18 +548,18 @@ class GraphQuery:
                         relationship_types=record["rel_types"],
                     )
                 )
-        
+
         logger.info(f"Found {len(paths)} dependency paths from {source_file} to {target_file}")
         return paths
 
     def get_file_metrics(self, repo_id: UUID, file_path: str) -> dict[str, Any]:
         """
         Get metrics for a file.
-        
+
         Args:
             repo_id: Repository UUID
             file_path: File path
-            
+
         Returns:
             Dictionary with file metrics
         """
@@ -580,7 +576,7 @@ class GraphQuery:
                count(DISTINCT imported) as imports_count,
                count(DISTINCT importer) as importers_count
         """
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -589,13 +585,13 @@ class GraphQuery:
                 timeout=self._query_timeout,
             )
             record = result.single()
-            
+
             if not record:
                 raise QueryError(
                     f"File not found: {file_path}",
                     details={"repo_id": str(repo_id)},
                 )
-            
+
             metrics = {
                 "file_path": file_path,
                 "total_lines": record["total_lines"],
@@ -608,7 +604,7 @@ class GraphQuery:
                 "fan_in": record["importers_count"],
                 "fan_out": record["imports_count"],
             }
-        
+
         logger.info(f"File metrics for {file_path}: {metrics}")
         return metrics
 

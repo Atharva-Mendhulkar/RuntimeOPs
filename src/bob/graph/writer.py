@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class GraphWriter:
     """
     Writes data to Neo4j graph database.
-    
+
     Responsibilities:
     - Create nodes: Repository, File, Symbol, Service, Commit
     - Create relationships: IMPORTS, DEFINES, CALLS, BELONGS_TO, MODIFIED, CONTAINS
@@ -73,7 +73,7 @@ class GraphWriter:
             # Verify connectivity
             self._driver.verify_connectivity()
             logger.info("Connected to Neo4j")
-            
+
             # Create indexes
             self._create_indexes()
         except Exception as e:
@@ -94,27 +94,23 @@ class GraphWriter:
             # Repository indexes
             "CREATE INDEX repo_id_idx IF NOT EXISTS FOR (r:Repository) ON (r.repo_id)",
             "CREATE INDEX repo_github_url_idx IF NOT EXISTS FOR (r:Repository) ON (r.github_url)",
-            
             # File indexes
             "CREATE INDEX file_repo_id_idx IF NOT EXISTS FOR (f:File) ON (f.repo_id)",
             "CREATE INDEX file_path_idx IF NOT EXISTS FOR (f:File) ON (f.file_path)",
             "CREATE INDEX file_language_idx IF NOT EXISTS FOR (f:File) ON (f.language)",
-            
             # Symbol indexes
             "CREATE INDEX symbol_repo_id_idx IF NOT EXISTS FOR (s:Symbol) ON (s.repo_id)",
             "CREATE INDEX symbol_name_idx IF NOT EXISTS FOR (s:Symbol) ON (s.name)",
             "CREATE INDEX symbol_file_path_idx IF NOT EXISTS FOR (s:Symbol) ON (s.file_path)",
             "CREATE INDEX symbol_type_idx IF NOT EXISTS FOR (s:Symbol) ON (s.symbol_type)",
-            
             # Service indexes
             "CREATE INDEX service_repo_id_idx IF NOT EXISTS FOR (s:Service) ON (s.repo_id)",
             "CREATE INDEX service_name_idx IF NOT EXISTS FOR (s:Service) ON (s.name)",
-            
             # Commit indexes
             "CREATE INDEX commit_repo_id_idx IF NOT EXISTS FOR (c:Commit) ON (c.repo_id)",
             "CREATE INDEX commit_hash_idx IF NOT EXISTS FOR (c:Commit) ON (c.commit_hash)",
         ]
-        
+
         with self._driver.session() as session:
             for index_query in indexes:
                 try:
@@ -131,13 +127,13 @@ class GraphWriter:
     ) -> RepositoryNode:
         """
         Write or update repository node.
-        
+
         Args:
             repo_id: Repository UUID
             github_url: GitHub repository URL
             name: Repository name
             default_branch: Default branch name
-            
+
         Returns:
             Created/updated repository node
         """
@@ -147,13 +143,13 @@ class GraphWriter:
             name=name,
             default_branch=default_branch,
         )
-        
+
         query = """
         MERGE (r:Repository {repo_id: $repo_id})
         SET r += $properties
         RETURN r
         """
-        
+
         with self._driver.session() as session:
             result = session.run(
                 query,
@@ -161,7 +157,7 @@ class GraphWriter:
                 properties=repo_node.to_neo4j_properties(),
             )
             result.single()
-        
+
         logger.info(f"Wrote repository node: {name}")
         return repo_node
 
@@ -173,58 +169,55 @@ class GraphWriter:
     ) -> dict[str, int]:
         """
         Write parse results to graph in batches.
-        
+
         Args:
             repo_id: Repository UUID
             parse_results: List of parse results
             batch_size: Batch size (default: 1000)
-            
+
         Returns:
             Dictionary with counts of created nodes/edges
         """
         batch_size = batch_size or self._batch_size
         stats = {"files": 0, "symbols": 0, "imports": 0, "defines": 0}
-        
+
         # Batch write files
         file_batches = [
-            parse_results[i : i + batch_size]
-            for i in range(0, len(parse_results), batch_size)
+            parse_results[i : i + batch_size] for i in range(0, len(parse_results), batch_size)
         ]
-        
+
         for batch in file_batches:
             stats["files"] += self._write_file_batch(repo_id, batch)
-        
+
         # Batch write symbols
         all_symbols = []
         for result in parse_results:
             for symbol in result.symbols:
                 all_symbols.append((result, symbol))
-        
+
         symbol_batches = [
-            all_symbols[i : i + batch_size]
-            for i in range(0, len(all_symbols), batch_size)
+            all_symbols[i : i + batch_size] for i in range(0, len(all_symbols), batch_size)
         ]
-        
+
         for batch in symbol_batches:
             stats["symbols"] += self._write_symbol_batch(repo_id, batch)
-        
+
         # Batch write imports
         all_imports = []
         for result in parse_results:
             for import_stmt in result.imports:
                 all_imports.append((result, import_stmt))
-        
+
         import_batches = [
-            all_imports[i : i + batch_size]
-            for i in range(0, len(all_imports), batch_size)
+            all_imports[i : i + batch_size] for i in range(0, len(all_imports), batch_size)
         ]
-        
+
         for batch in import_batches:
             stats["imports"] += self._write_import_batch(repo_id, batch)
-        
+
         # Create DEFINES relationships
         stats["defines"] = self._create_defines_relationships(repo_id, parse_results)
-        
+
         logger.info(f"Wrote parse results: {stats}")
         return stats
 
@@ -243,7 +236,7 @@ class GraphWriter:
         MERGE (r)-[:CONTAINS]->(f)
         RETURN count(f) as count
         """
-        
+
         files_data = []
         for result in batch:
             file_node = FileNode(
@@ -255,16 +248,18 @@ class GraphWriter:
                 comment_lines=result.comment_lines,
                 symbols_count=len(result.symbols),
             )
-            files_data.append({
-                "repo_id": str(repo_id),
-                "file_path": result.file_path,
-                "properties": file_node.to_neo4j_properties(),
-            })
-        
+            files_data.append(
+                {
+                    "repo_id": str(repo_id),
+                    "file_path": result.file_path,
+                    "properties": file_node.to_neo4j_properties(),
+                }
+            )
+
         with self._driver.session() as session:
             result = session.run(query, files=files_data)
             count = result.single()["count"]
-        
+
         return count
 
     def _write_symbol_batch(
@@ -284,7 +279,7 @@ class GraphWriter:
         SET s += symbol.properties
         RETURN count(s) as count
         """
-        
+
         symbols_data = []
         for result, symbol in batch:
             symbol_node = SymbolNode(
@@ -301,18 +296,20 @@ class GraphWriter:
                 parameters=symbol.parameters or [],
                 return_type=symbol.return_type,
             )
-            symbols_data.append({
-                "repo_id": str(repo_id),
-                "file_path": result.file_path,
-                "name": symbol.name,
-                "start_line": symbol.start_line,
-                "properties": symbol_node.to_neo4j_properties(),
-            })
-        
+            symbols_data.append(
+                {
+                    "repo_id": str(repo_id),
+                    "file_path": result.file_path,
+                    "name": symbol.name,
+                    "start_line": symbol.start_line,
+                    "properties": symbol_node.to_neo4j_properties(),
+                }
+            )
+
         with self._driver.session() as session:
             result = session.run(query, symbols=symbols_data)
             count = result.single()["count"]
-        
+
         return count
 
     def _write_import_batch(
@@ -329,14 +326,14 @@ class GraphWriter:
         SET r += import.properties
         RETURN count(r) as count
         """
-        
+
         imports_data = []
         for result, import_stmt in batch:
             # Only create relationships for internal imports
             # External imports would need different handling
             if not import_stmt.is_relative:
                 continue
-            
+
             imports_rel = ImportsRelationship(
                 source_file=result.file_path,
                 target_file=import_stmt.module,  # Simplified - would need resolution
@@ -344,20 +341,22 @@ class GraphWriter:
                 is_external=False,
                 line_number=import_stmt.line_number,
             )
-            imports_data.append({
-                "repo_id": str(repo_id),
-                "source_file": result.file_path,
-                "target_file": import_stmt.module,
-                "properties": imports_rel.to_neo4j_properties(),
-            })
-        
+            imports_data.append(
+                {
+                    "repo_id": str(repo_id),
+                    "source_file": result.file_path,
+                    "target_file": import_stmt.module,
+                    "properties": imports_rel.to_neo4j_properties(),
+                }
+            )
+
         if not imports_data:
             return 0
-        
+
         with self._driver.session() as session:
             result = session.run(query, imports=imports_data)
             count = result.single()["count"]
-        
+
         return count
 
     def _create_defines_relationships(
@@ -373,27 +372,25 @@ class GraphWriter:
         MERGE (f)-[:DEFINES]->(s)
         RETURN count(s) as count
         """
-        
-        files_with_symbols = [
-            r.file_path for r in parse_results if r.symbols
-        ]
-        
+
+        files_with_symbols = [r.file_path for r in parse_results if r.symbols]
+
         if not files_with_symbols:
             return 0
-            
+
         total_count = 0
         batch_size = self._batch_size
-        
+
         with self._driver.session() as session:
             for i in range(0, len(files_with_symbols), batch_size):
-                batch = files_with_symbols[i:i+batch_size]
+                batch = files_with_symbols[i : i + batch_size]
                 rel_result = session.run(
                     query,
                     repo_id=str(repo_id),
                     files=batch,
                 )
                 total_count += rel_result.single()["count"]
-        
+
         return total_count
 
     def write_service_boundaries(
@@ -403,11 +400,11 @@ class GraphWriter:
     ) -> int:
         """
         Write service boundary nodes and relationships.
-        
+
         Args:
             repo_id: Repository UUID
             service_boundaries: List of detected service boundaries
-            
+
         Returns:
             Number of services written
         """
@@ -425,7 +422,7 @@ class GraphWriter:
         MERGE (f)-[:BELONGS_TO]->(s)
         RETURN count(DISTINCT s) as count
         """
-        
+
         services_data = []
         for boundary in service_boundaries:
             service_node = ServiceNode(
@@ -437,17 +434,19 @@ class GraphWriter:
                 dependencies=boundary.dependencies,
                 file_count=len(boundary.files),
             )
-            services_data.append({
-                "repo_id": str(repo_id),
-                "name": boundary.name,
-                "files": boundary.files,
-                "properties": service_node.to_neo4j_properties(),
-            })
-        
+            services_data.append(
+                {
+                    "repo_id": str(repo_id),
+                    "name": boundary.name,
+                    "files": boundary.files,
+                    "properties": service_node.to_neo4j_properties(),
+                }
+            )
+
         with self._driver.session() as session:
             result = session.run(query, services=services_data)
             count = result.single()["count"]
-        
+
         logger.info(f"Wrote {count} service boundaries")
         return count
 
@@ -458,24 +457,24 @@ class GraphWriter:
     ) -> dict[str, int]:
         """
         Write complete analysis result to graph.
-        
+
         Args:
             repo_id: Repository UUID
             analysis_result: Analysis result from StructuralAnalyzer
-            
+
         Returns:
             Dictionary with counts of created elements
         """
         stats = {"services": 0, "call_edges": 0}
-        
+
         # Write service boundaries
         stats["services"] = self.write_service_boundaries(
             repo_id, analysis_result.service_boundaries
         )
-        
+
         # Write call graph edges
         stats["call_edges"] = self._write_call_graph(repo_id, analysis_result)
-        
+
         logger.info(f"Wrote analysis result: {stats}")
         return stats
 
@@ -501,52 +500,54 @@ class GraphWriter:
         SET r += call.properties
         RETURN count(r) as count
         """
-        
+
         calls_data = []
         for edge in analysis_result.call_graph.edges(data=True):
             caller_id, callee_id, data = edge
-            
+
             # Parse node IDs (format: "file_path::symbol_name")
             caller_parts = caller_id.split("::")
             callee_parts = callee_id.split("::")
-            
+
             if len(caller_parts) == 2 and len(callee_parts) == 2:
                 calls_rel = CallsRelationship(
                     caller=caller_id,
                     callee=callee_id,
                     call_type=data.get("call_type", "direct"),
                 )
-                calls_data.append({
-                    "repo_id": str(repo_id),
-                    "caller_file": caller_parts[0],
-                    "caller_name": caller_parts[1],
-                    "callee_file": callee_parts[0],
-                    "callee_name": callee_parts[1],
-                    "properties": calls_rel.to_neo4j_properties(),
-                })
-        
+                calls_data.append(
+                    {
+                        "repo_id": str(repo_id),
+                        "caller_file": caller_parts[0],
+                        "caller_name": caller_parts[1],
+                        "callee_file": callee_parts[0],
+                        "callee_name": callee_parts[1],
+                        "properties": calls_rel.to_neo4j_properties(),
+                    }
+                )
+
         if not calls_data:
             return 0
-        
+
         # Batch write
         batch_size = self._batch_size
         total_count = 0
-        
+
         for i in range(0, len(calls_data), batch_size):
             batch = calls_data[i : i + batch_size]
             with self._driver.session() as session:
                 result = session.run(query, calls=batch)
                 total_count += result.single()["count"]
-        
+
         return total_count
 
     def check_graph_integrity(self, repo_id: UUID) -> dict[str, Any]:
         """
         Check graph integrity for a repository.
-        
+
         Args:
             repo_id: Repository UUID
-            
+
         Returns:
             Dictionary with integrity check results
         """
@@ -556,7 +557,7 @@ class GraphWriter:
             "cycles": [],
             "missing_defines": 0,
         }
-        
+
         with self._driver.session() as session:
             # Check for orphaned symbols (symbols without files)
             result = session.run(
@@ -568,7 +569,7 @@ class GraphWriter:
                 repo_id=str(repo_id),
             )
             checks["orphaned_symbols"] = result.single()["count"]
-            
+
             # Check for orphaned files (files without repository)
             result = session.run(
                 """
@@ -579,7 +580,7 @@ class GraphWriter:
                 repo_id=str(repo_id),
             )
             checks["orphaned_files"] = result.single()["count"]
-            
+
             # Check for symbols without DEFINES relationship
             result = session.run(
                 """
@@ -591,17 +592,17 @@ class GraphWriter:
                 repo_id=str(repo_id),
             )
             checks["missing_defines"] = result.single()["count"]
-        
+
         logger.info(f"Graph integrity check: {checks}")
         return checks
 
     def delete_repository(self, repo_id: UUID) -> int:
         """
         Delete all nodes and relationships for a repository.
-        
+
         Args:
             repo_id: Repository UUID
-            
+
         Returns:
             Number of nodes deleted
         """
@@ -610,11 +611,11 @@ class GraphWriter:
         DETACH DELETE n
         RETURN count(n) as count
         """
-        
+
         with self._driver.session() as session:
             result = session.run(query, repo_id=str(repo_id))
             count = result.single()["count"]
-        
+
         logger.info(f"Deleted {count} nodes for repository {repo_id}")
         return count
 

@@ -68,7 +68,7 @@ class RateLimiter:
     def __init__(self, redis_client: Redis):
         """
         Initialize rate limiter.
-        
+
         Args:
             redis_client: Redis client for distributed rate limiting
         """
@@ -82,18 +82,18 @@ class RateLimiter:
     ) -> Tuple[bool, Dict[str, int]]:
         """
         Check if request is within rate limits.
-        
+
         Args:
             user_id: User identifier
             endpoint: API endpoint path
             tier: User's rate limit tier
-            
+
         Returns:
             Tuple of (allowed, metadata) where metadata contains:
             - remaining: Requests remaining in current window
             - reset_at: Unix timestamp when limit resets
             - retry_after: Seconds to wait if rate limited
-            
+
         Raises:
             RateLimitExceededError: If rate limit exceeded
         """
@@ -187,7 +187,7 @@ class RateLimiter:
     ) -> None:
         """
         Record a request for rate limiting.
-        
+
         Args:
             user_id: User identifier
             endpoint: API endpoint path
@@ -214,11 +214,11 @@ class RateLimiter:
     ) -> Dict[str, Any]:
         """
         Get current usage statistics for a user.
-        
+
         Args:
             user_id: User identifier
             tier: User's rate limit tier
-            
+
         Returns:
             Dictionary with usage statistics
         """
@@ -228,18 +228,12 @@ class RateLimiter:
         # Get hourly usage across all endpoints
         pattern = f"ratelimit:hour:{user_id}:*"
         hourly_keys = self.redis.keys(pattern)
-        total_hourly = sum(
-            self._get_request_count(key.decode(), 3600, now)
-            for key in hourly_keys
-        )
+        total_hourly = sum(self._get_request_count(key.decode(), 3600, now) for key in hourly_keys)
 
         # Get minute usage
         pattern = f"ratelimit:minute:{user_id}:*"
         minute_keys = self.redis.keys(pattern)
-        total_minute = sum(
-            self._get_request_count(key.decode(), 60, now)
-            for key in minute_keys
-        )
+        total_minute = sum(self._get_request_count(key.decode(), 60, now) for key in minute_keys)
 
         return {
             "tier": tier.value,
@@ -259,7 +253,7 @@ class RateLimiter:
     def _get_request_count(self, key: str, window_seconds: int, now: int) -> int:
         """
         Get request count in sliding window.
-        
+
         Uses Redis sorted set with timestamps as scores.
         """
         # Remove old entries outside window
@@ -273,7 +267,7 @@ class RateLimiter:
     def _record_in_window(self, key: str, window_seconds: int, now: int) -> None:
         """
         Record a request in sliding window.
-        
+
         Uses Redis sorted set with timestamps as scores.
         """
         # Add current request with timestamp as score
@@ -301,14 +295,14 @@ class RateLimiter:
     ) -> bool:
         """
         Check if user is within concurrent request limit.
-        
+
         Args:
             user_id: User identifier
             tier: User's rate limit tier
-            
+
         Returns:
             True if within limit
-            
+
         Raises:
             RateLimitExceededError: If concurrent limit exceeded
         """
@@ -347,12 +341,12 @@ class RateLimiter:
     def get_tier_for_user(self, user_id: str) -> RateLimitTier:
         """
         Get rate limit tier for user.
-        
+
         This would typically query a database. For now, returns default.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             User's rate limit tier
         """
@@ -368,12 +362,12 @@ def get_rate_limit_headers(
 ) -> Dict[str, str]:
     """
     Generate rate limit headers for HTTP response.
-    
+
     Args:
         limit: Total requests allowed in window
         remaining: Requests remaining
         reset_at: Unix timestamp when limit resets
-        
+
     Returns:
         Dictionary of headers
     """

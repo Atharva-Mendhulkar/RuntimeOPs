@@ -4,43 +4,43 @@ Agent-facing tool suite for RuntimeOps agents
 """
 
 from bob.tools.bob_tools import (
-    semantic_search,
-    resolve_stack_trace,
-    get_dependency_graph,
     get_blast_radius,
-    get_file_content,
     get_commit_diff,
-    get_test_map,
     get_conventions,
+    get_dependency_graph,
+    get_file_content,
     get_risk_context,
+    get_test_map,
+    resolve_stack_trace,
+    semantic_search,
     trigger_reindex,
 )
 from bob.tools.client import BobClient
 from bob.tools.event_bus import (
+    BobEvent,
+    EventBusManager,
     EventEmitter,
     EventSubscriber,
     EventType,
-    BobEvent,
-    EventBusManager,
 )
 from bob.tools.langgraph_integration import (
-    create_bob_tools,
     AgentToolset,
     BobStateManager,
+    create_bob_tools,
     create_tool_node,
 )
 from bob.tools.models import (
-    CodeSearchResult,
-    StackFrame,
-    DependencyGraph,
-    DependencyEdge,
     BlastRadiusResult,
-    ImpactedFile,
+    ChangedFile,
+    CodeSearchResult,
+    CommitDiff,
+    DependencyEdge,
+    DependencyGraph,
     FileContent,
     FileSymbol,
-    CommitDiff,
-    ChangedFile,
+    ImpactedFile,
     RiskContext,
+    StackFrame,
 )
 
 __all__ = [

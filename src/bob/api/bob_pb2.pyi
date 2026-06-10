@@ -1,13 +1,18 @@
-from google.protobuf.internal import containers as _containers
+from collections.abc import Iterable as _Iterable
+from collections.abc import Mapping as _Mapping
+from typing import ClassVar as _ClassVar
+from typing import Optional as _Optional
+from typing import Union as _Union
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
-from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+from google.protobuf.internal import containers as _containers
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class SearchRequest(_message.Message):
     __slots__ = ("repo_id", "query", "k", "filter")
+
     class FilterEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -15,6 +20,7 @@ class SearchRequest(_message.Message):
         key: str
         value: str
         def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+
     REPO_ID_FIELD_NUMBER: _ClassVar[int]
     QUERY_FIELD_NUMBER: _ClassVar[int]
     K_FIELD_NUMBER: _ClassVar[int]
@@ -23,10 +29,25 @@ class SearchRequest(_message.Message):
     query: str
     k: int
     filter: _containers.ScalarMap[str, str]
-    def __init__(self, repo_id: _Optional[str] = ..., query: _Optional[str] = ..., k: _Optional[int] = ..., filter: _Optional[_Mapping[str, str]] = ...) -> None: ...
+    def __init__(
+        self,
+        repo_id: _Optional[str] = ...,
+        query: _Optional[str] = ...,
+        k: _Optional[int] = ...,
+        filter: _Optional[_Mapping[str, str]] = ...,
+    ) -> None: ...
 
 class SearchResult(_message.Message):
-    __slots__ = ("file_path", "symbol_name", "symbol_type", "start_line", "end_line", "content", "confidence", "language")
+    __slots__ = (
+        "file_path",
+        "symbol_name",
+        "symbol_type",
+        "start_line",
+        "end_line",
+        "content",
+        "confidence",
+        "language",
+    )
     FILE_PATH_FIELD_NUMBER: _ClassVar[int]
     SYMBOL_NAME_FIELD_NUMBER: _ClassVar[int]
     SYMBOL_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -43,7 +64,17 @@ class SearchResult(_message.Message):
     content: str
     confidence: float
     language: str
-    def __init__(self, file_path: _Optional[str] = ..., symbol_name: _Optional[str] = ..., symbol_type: _Optional[str] = ..., start_line: _Optional[int] = ..., end_line: _Optional[int] = ..., content: _Optional[str] = ..., confidence: _Optional[float] = ..., language: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        file_path: _Optional[str] = ...,
+        symbol_name: _Optional[str] = ...,
+        symbol_type: _Optional[str] = ...,
+        start_line: _Optional[int] = ...,
+        end_line: _Optional[int] = ...,
+        content: _Optional[str] = ...,
+        confidence: _Optional[float] = ...,
+        language: _Optional[str] = ...,
+    ) -> None: ...
 
 class SearchResponse(_message.Message):
     __slots__ = ("results", "total", "query_time_ms", "repo_id")
@@ -55,7 +86,13 @@ class SearchResponse(_message.Message):
     total: int
     query_time_ms: float
     repo_id: str
-    def __init__(self, results: _Optional[_Iterable[_Union[SearchResult, _Mapping]]] = ..., total: _Optional[int] = ..., query_time_ms: _Optional[float] = ..., repo_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        results: _Optional[_Iterable[_Union[SearchResult, _Mapping]]] = ...,
+        total: _Optional[int] = ...,
+        query_time_ms: _Optional[float] = ...,
+        repo_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class StackTraceRequest(_message.Message):
     __slots__ = ("repo_id", "trace")
@@ -79,7 +116,15 @@ class StackFrame(_message.Message):
     commit_sha: str
     author: str
     raw_frame: str
-    def __init__(self, file_path: _Optional[str] = ..., line_number: _Optional[int] = ..., function: _Optional[str] = ..., commit_sha: _Optional[str] = ..., author: _Optional[str] = ..., raw_frame: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        file_path: _Optional[str] = ...,
+        line_number: _Optional[int] = ...,
+        function: _Optional[str] = ...,
+        commit_sha: _Optional[str] = ...,
+        author: _Optional[str] = ...,
+        raw_frame: _Optional[str] = ...,
+    ) -> None: ...
 
 class StackTraceResponse(_message.Message):
     __slots__ = ("frames", "total_frames", "resolved_frames", "repo_id")
@@ -91,7 +136,13 @@ class StackTraceResponse(_message.Message):
     total_frames: int
     resolved_frames: int
     repo_id: str
-    def __init__(self, frames: _Optional[_Iterable[_Union[StackFrame, _Mapping]]] = ..., total_frames: _Optional[int] = ..., resolved_frames: _Optional[int] = ..., repo_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        frames: _Optional[_Iterable[_Union[StackFrame, _Mapping]]] = ...,
+        total_frames: _Optional[int] = ...,
+        resolved_frames: _Optional[int] = ...,
+        repo_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class DependencyGraphRequest(_message.Message):
     __slots__ = ("repo_id", "file_path", "hops", "direction")
@@ -103,7 +154,13 @@ class DependencyGraphRequest(_message.Message):
     file_path: str
     hops: int
     direction: str
-    def __init__(self, repo_id: _Optional[str] = ..., file_path: _Optional[str] = ..., hops: _Optional[int] = ..., direction: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        repo_id: _Optional[str] = ...,
+        file_path: _Optional[str] = ...,
+        hops: _Optional[int] = ...,
+        direction: _Optional[str] = ...,
+    ) -> None: ...
 
 class DependencyEdge(_message.Message):
     __slots__ = ("source", "target", "relationship")
@@ -113,7 +170,12 @@ class DependencyEdge(_message.Message):
     source: str
     target: str
     relationship: str
-    def __init__(self, source: _Optional[str] = ..., target: _Optional[str] = ..., relationship: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        source: _Optional[str] = ...,
+        target: _Optional[str] = ...,
+        relationship: _Optional[str] = ...,
+    ) -> None: ...
 
 class DependencyGraphResponse(_message.Message):
     __slots__ = ("root_file", "edges", "node_count", "edge_count", "max_hops", "repo_id")
@@ -129,7 +191,15 @@ class DependencyGraphResponse(_message.Message):
     edge_count: int
     max_hops: int
     repo_id: str
-    def __init__(self, root_file: _Optional[str] = ..., edges: _Optional[_Iterable[_Union[DependencyEdge, _Mapping]]] = ..., node_count: _Optional[int] = ..., edge_count: _Optional[int] = ..., max_hops: _Optional[int] = ..., repo_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        root_file: _Optional[str] = ...,
+        edges: _Optional[_Iterable[_Union[DependencyEdge, _Mapping]]] = ...,
+        node_count: _Optional[int] = ...,
+        edge_count: _Optional[int] = ...,
+        max_hops: _Optional[int] = ...,
+        repo_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class BlastRadiusRequest(_message.Message):
     __slots__ = ("repo_id", "files")
@@ -137,7 +207,9 @@ class BlastRadiusRequest(_message.Message):
     FILES_FIELD_NUMBER: _ClassVar[int]
     repo_id: str
     files: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, repo_id: _Optional[str] = ..., files: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(
+        self, repo_id: _Optional[str] = ..., files: _Optional[_Iterable[str]] = ...
+    ) -> None: ...
 
 class ImpactedFile(_message.Message):
     __slots__ = ("file_path", "distance", "acs_score", "downstream_services", "test_files")
@@ -151,10 +223,23 @@ class ImpactedFile(_message.Message):
     acs_score: float
     downstream_services: _containers.RepeatedScalarFieldContainer[str]
     test_files: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, file_path: _Optional[str] = ..., distance: _Optional[int] = ..., acs_score: _Optional[float] = ..., downstream_services: _Optional[_Iterable[str]] = ..., test_files: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(
+        self,
+        file_path: _Optional[str] = ...,
+        distance: _Optional[int] = ...,
+        acs_score: _Optional[float] = ...,
+        downstream_services: _Optional[_Iterable[str]] = ...,
+        test_files: _Optional[_Iterable[str]] = ...,
+    ) -> None: ...
 
 class BlastRadiusResponse(_message.Message):
-    __slots__ = ("changed_files", "impacted_files", "total_impacted", "affected_services", "repo_id")
+    __slots__ = (
+        "changed_files",
+        "impacted_files",
+        "total_impacted",
+        "affected_services",
+        "repo_id",
+    )
     CHANGED_FILES_FIELD_NUMBER: _ClassVar[int]
     IMPACTED_FILES_FIELD_NUMBER: _ClassVar[int]
     TOTAL_IMPACTED_FIELD_NUMBER: _ClassVar[int]
@@ -165,7 +250,14 @@ class BlastRadiusResponse(_message.Message):
     total_impacted: int
     affected_services: _containers.RepeatedScalarFieldContainer[str]
     repo_id: str
-    def __init__(self, changed_files: _Optional[_Iterable[str]] = ..., impacted_files: _Optional[_Iterable[_Union[ImpactedFile, _Mapping]]] = ..., total_impacted: _Optional[int] = ..., affected_services: _Optional[_Iterable[str]] = ..., repo_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        changed_files: _Optional[_Iterable[str]] = ...,
+        impacted_files: _Optional[_Iterable[_Union[ImpactedFile, _Mapping]]] = ...,
+        total_impacted: _Optional[int] = ...,
+        affected_services: _Optional[_Iterable[str]] = ...,
+        repo_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class FileRequest(_message.Message):
     __slots__ = ("repo_id", "file_path")
@@ -185,10 +277,25 @@ class FileSymbol(_message.Message):
     type: str
     start_line: int
     end_line: int
-    def __init__(self, name: _Optional[str] = ..., type: _Optional[str] = ..., start_line: _Optional[int] = ..., end_line: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        name: _Optional[str] = ...,
+        type: _Optional[str] = ...,
+        start_line: _Optional[int] = ...,
+        end_line: _Optional[int] = ...,
+    ) -> None: ...
 
 class FileResponse(_message.Message):
-    __slots__ = ("file_path", "content", "language", "total_lines", "symbols", "imports", "last_modified", "repo_id")
+    __slots__ = (
+        "file_path",
+        "content",
+        "language",
+        "total_lines",
+        "symbols",
+        "imports",
+        "last_modified",
+        "repo_id",
+    )
     FILE_PATH_FIELD_NUMBER: _ClassVar[int]
     CONTENT_FIELD_NUMBER: _ClassVar[int]
     LANGUAGE_FIELD_NUMBER: _ClassVar[int]
@@ -205,7 +312,17 @@ class FileResponse(_message.Message):
     imports: _containers.RepeatedScalarFieldContainer[str]
     last_modified: str
     repo_id: str
-    def __init__(self, file_path: _Optional[str] = ..., content: _Optional[str] = ..., language: _Optional[str] = ..., total_lines: _Optional[int] = ..., symbols: _Optional[_Iterable[_Union[FileSymbol, _Mapping]]] = ..., imports: _Optional[_Iterable[str]] = ..., last_modified: _Optional[str] = ..., repo_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        file_path: _Optional[str] = ...,
+        content: _Optional[str] = ...,
+        language: _Optional[str] = ...,
+        total_lines: _Optional[int] = ...,
+        symbols: _Optional[_Iterable[_Union[FileSymbol, _Mapping]]] = ...,
+        imports: _Optional[_Iterable[str]] = ...,
+        last_modified: _Optional[str] = ...,
+        repo_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class CommitDiffRequest(_message.Message):
     __slots__ = ("repo_id", "commit_sha")
@@ -216,7 +333,14 @@ class CommitDiffRequest(_message.Message):
     def __init__(self, repo_id: _Optional[str] = ..., commit_sha: _Optional[str] = ...) -> None: ...
 
 class ChangedFile(_message.Message):
-    __slots__ = ("file_path", "change_type", "additions", "deletions", "impacted_files", "test_files")
+    __slots__ = (
+        "file_path",
+        "change_type",
+        "additions",
+        "deletions",
+        "impacted_files",
+        "test_files",
+    )
     FILE_PATH_FIELD_NUMBER: _ClassVar[int]
     CHANGE_TYPE_FIELD_NUMBER: _ClassVar[int]
     ADDITIONS_FIELD_NUMBER: _ClassVar[int]
@@ -229,10 +353,27 @@ class ChangedFile(_message.Message):
     deletions: int
     impacted_files: _containers.RepeatedScalarFieldContainer[str]
     test_files: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, file_path: _Optional[str] = ..., change_type: _Optional[str] = ..., additions: _Optional[int] = ..., deletions: _Optional[int] = ..., impacted_files: _Optional[_Iterable[str]] = ..., test_files: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(
+        self,
+        file_path: _Optional[str] = ...,
+        change_type: _Optional[str] = ...,
+        additions: _Optional[int] = ...,
+        deletions: _Optional[int] = ...,
+        impacted_files: _Optional[_Iterable[str]] = ...,
+        test_files: _Optional[_Iterable[str]] = ...,
+    ) -> None: ...
 
 class CommitDiffResponse(_message.Message):
-    __slots__ = ("commit_sha", "author", "message", "timestamp", "changed_files", "total_additions", "total_deletions", "repo_id")
+    __slots__ = (
+        "commit_sha",
+        "author",
+        "message",
+        "timestamp",
+        "changed_files",
+        "total_additions",
+        "total_deletions",
+        "repo_id",
+    )
     COMMIT_SHA_FIELD_NUMBER: _ClassVar[int]
     AUTHOR_FIELD_NUMBER: _ClassVar[int]
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
@@ -249,14 +390,34 @@ class CommitDiffResponse(_message.Message):
     total_additions: int
     total_deletions: int
     repo_id: str
-    def __init__(self, commit_sha: _Optional[str] = ..., author: _Optional[str] = ..., message: _Optional[str] = ..., timestamp: _Optional[str] = ..., changed_files: _Optional[_Iterable[_Union[ChangedFile, _Mapping]]] = ..., total_additions: _Optional[int] = ..., total_deletions: _Optional[int] = ..., repo_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        commit_sha: _Optional[str] = ...,
+        author: _Optional[str] = ...,
+        message: _Optional[str] = ...,
+        timestamp: _Optional[str] = ...,
+        changed_files: _Optional[_Iterable[_Union[ChangedFile, _Mapping]]] = ...,
+        total_additions: _Optional[int] = ...,
+        total_deletions: _Optional[int] = ...,
+        repo_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class HealthRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class HealthResponse(_message.Message):
-    __slots__ = ("status", "version", "services", "metrics", "repos_indexed", "query_p95_ms", "index_queue_depth", "last_error")
+    __slots__ = (
+        "status",
+        "version",
+        "services",
+        "metrics",
+        "repos_indexed",
+        "query_p95_ms",
+        "index_queue_depth",
+        "last_error",
+    )
+
     class ServicesEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -264,6 +425,7 @@ class HealthResponse(_message.Message):
         key: str
         value: str
         def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+
     class MetricsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -271,6 +433,7 @@ class HealthResponse(_message.Message):
         key: str
         value: str
         def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+
     STATUS_FIELD_NUMBER: _ClassVar[int]
     VERSION_FIELD_NUMBER: _ClassVar[int]
     SERVICES_FIELD_NUMBER: _ClassVar[int]
@@ -287,7 +450,17 @@ class HealthResponse(_message.Message):
     query_p95_ms: float
     index_queue_depth: int
     last_error: str
-    def __init__(self, status: _Optional[str] = ..., version: _Optional[str] = ..., services: _Optional[_Mapping[str, str]] = ..., metrics: _Optional[_Mapping[str, str]] = ..., repos_indexed: _Optional[int] = ..., query_p95_ms: _Optional[float] = ..., index_queue_depth: _Optional[int] = ..., last_error: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        status: _Optional[str] = ...,
+        version: _Optional[str] = ...,
+        services: _Optional[_Mapping[str, str]] = ...,
+        metrics: _Optional[_Mapping[str, str]] = ...,
+        repos_indexed: _Optional[int] = ...,
+        query_p95_ms: _Optional[float] = ...,
+        index_queue_depth: _Optional[int] = ...,
+        last_error: _Optional[str] = ...,
+    ) -> None: ...
 
 class SubQuery(_message.Message):
     __slots__ = ("query_id", "query_type", "params_json")
@@ -297,7 +470,12 @@ class SubQuery(_message.Message):
     query_id: str
     query_type: str
     params_json: str
-    def __init__(self, query_id: _Optional[str] = ..., query_type: _Optional[str] = ..., params_json: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        query_id: _Optional[str] = ...,
+        query_type: _Optional[str] = ...,
+        params_json: _Optional[str] = ...,
+    ) -> None: ...
 
 class BatchRequest(_message.Message):
     __slots__ = ("queries",)
@@ -317,10 +495,23 @@ class SubQueryResult(_message.Message):
     result_json: str
     error: str
     execution_time_ms: float
-    def __init__(self, query_id: _Optional[str] = ..., success: bool = ..., result_json: _Optional[str] = ..., error: _Optional[str] = ..., execution_time_ms: _Optional[float] = ...) -> None: ...
+    def __init__(
+        self,
+        query_id: _Optional[str] = ...,
+        success: bool = ...,
+        result_json: _Optional[str] = ...,
+        error: _Optional[str] = ...,
+        execution_time_ms: _Optional[float] = ...,
+    ) -> None: ...
 
 class BatchResponse(_message.Message):
-    __slots__ = ("results", "total_queries", "successful_queries", "failed_queries", "total_time_ms")
+    __slots__ = (
+        "results",
+        "total_queries",
+        "successful_queries",
+        "failed_queries",
+        "total_time_ms",
+    )
     RESULTS_FIELD_NUMBER: _ClassVar[int]
     TOTAL_QUERIES_FIELD_NUMBER: _ClassVar[int]
     SUCCESSFUL_QUERIES_FIELD_NUMBER: _ClassVar[int]
@@ -331,4 +522,11 @@ class BatchResponse(_message.Message):
     successful_queries: int
     failed_queries: int
     total_time_ms: float
-    def __init__(self, results: _Optional[_Iterable[_Union[SubQueryResult, _Mapping]]] = ..., total_queries: _Optional[int] = ..., successful_queries: _Optional[int] = ..., failed_queries: _Optional[int] = ..., total_time_ms: _Optional[float] = ...) -> None: ...
+    def __init__(
+        self,
+        results: _Optional[_Iterable[_Union[SubQueryResult, _Mapping]]] = ...,
+        total_queries: _Optional[int] = ...,
+        successful_queries: _Optional[int] = ...,
+        failed_queries: _Optional[int] = ...,
+        total_time_ms: _Optional[float] = ...,
+    ) -> None: ...

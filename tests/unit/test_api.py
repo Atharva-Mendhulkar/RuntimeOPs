@@ -3,25 +3,25 @@ IBM Bob - Unit Tests for API Layer
 Tests for API models, gateway, router, and assembler
 """
 
-import pytest
 from datetime import datetime
 from uuid import uuid4
 
+import pytest
+
 from bob.api.models import (
+    BatchRequest,
+    BlastRadiusRequest,
+    CommitDiffRequest,
+    DependencyGraphRequest,
+    FileRequest,
     SearchRequest,
     SearchResponse,
     SearchResult,
     StackTraceRequest,
-    DependencyGraphRequest,
-    BlastRadiusRequest,
-    FileRequest,
-    CommitDiffRequest,
-    BatchRequest,
     SubQuery,
 )
+from bob.query.assembler import AssembledResult, Evidence, ResultAssembler
 from bob.query.router import QueryRouter, QueryType
-from bob.query.assembler import ResultAssembler, AssembledResult, Evidence
-
 
 # ============================================================================
 # API Models Tests
@@ -152,7 +152,7 @@ class TestQueryRouter:
     def test_classify_with_context(self):
         """Test query classification with context"""
         query = "test query"
-        
+
         # Semantic context
         query_type = self.router.classify_query(
             query,
@@ -174,7 +174,7 @@ class TestQueryRouter:
             query="authentication",
             k=10,
         )
-        
+
         assert routing["backend"] == "weaviate"
         assert routing["params"]["k"] == 10
         assert "optimization" in routing
@@ -186,7 +186,7 @@ class TestQueryRouter:
             operation="dependencies",
             params={"file_path": "app.py", "max_hops": 3},
         )
-        
+
         assert routing["backend"] == "neo4j"
         assert routing["operation"] == "dependencies"
         assert "optimization" in routing
@@ -197,7 +197,7 @@ class TestQueryRouter:
             repo_id=self.repo_id,
             file_path="src/app.py",
         )
-        
+
         assert routing["backend"] == "redis"
         assert routing["fallback"] == "git"
         assert routing["params"]["file_path"] == "src/app.py"
@@ -210,7 +210,7 @@ class TestQueryRouter:
             k=10,
             graph_hops=3,
         )
-        
+
         assert routing["query_type"] == QueryType.HYBRID.value
         assert "weaviate" in routing["backends"]
         assert "neo4j" in routing["backends"]
@@ -293,10 +293,10 @@ class TestResultAssembler:
             "rerank_score": 0.0,
             "graph_centrality": 0.7,
         }
-        
+
         confidence = self.assembler._calculate_confidence(metadata)
         assert 0.0 <= confidence <= 1.0
-        
+
         # Should be weighted combination
         expected = (0.9 * 0.50) + (0.7 * 0.50)  # No reranking
         assert abs(confidence - expected) < 0.01
@@ -304,16 +304,16 @@ class TestResultAssembler:
     def test_calculate_confidence_with_reranking(self):
         """Test confidence score with reranking enabled"""
         assembler = ResultAssembler(enable_reranking=True)
-        
+
         metadata = {
             "vector_similarity": 0.9,
             "rerank_score": 0.85,
             "graph_centrality": 0.7,
         }
-        
+
         confidence = assembler._calculate_confidence(metadata)
         assert 0.0 <= confidence <= 1.0
-        
+
         # Should include rerank score
         expected = (0.9 * 0.50) + (0.85 * 0.35) + (0.7 * 0.15)
         assert abs(confidence - expected) < 0.01
@@ -339,9 +339,9 @@ class TestResultAssembler:
             )
             for i in range(20)
         ]
-        
+
         trimmed = self.assembler._trim_to_token_budget(results)
-        
+
         # Should trim to fit budget
         assert len(trimmed) < len(results)
         assert len(trimmed) > 0
@@ -366,9 +366,9 @@ class TestResultAssembler:
             )
             for i in range(5)
         ]
-        
+
         filtered = self.assembler.filter_by_confidence(results, min_confidence=0.7)
-        
+
         # Should only include results with confidence >= 0.7
         assert all(r.confidence >= 0.7 for r in filtered)
         assert len(filtered) < len(results)
@@ -394,7 +394,7 @@ class TestResultAssembler:
             )
             for _ in range(3)
         ]
-        
+
         # Add a unique result
         results.append(
             AssembledResult(
@@ -413,9 +413,9 @@ class TestResultAssembler:
                 metadata={},
             )
         )
-        
+
         deduplicated = self.assembler.deduplicate_results(results)
-        
+
         # Should remove duplicates
         assert len(deduplicated) == 2
 
@@ -445,9 +445,9 @@ class TestResultAssembler:
                 },
             )
         ]
-        
+
         formatted = self.assembler.format_for_response(results)
-        
+
         assert len(formatted) == 1
         assert formatted[0]["file_path"] == "file.py"
         assert formatted[0]["confidence"] == 0.9

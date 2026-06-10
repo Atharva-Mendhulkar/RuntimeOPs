@@ -40,7 +40,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """
         Add security headers to response.
-        
+
         Headers added:
         - X-Content-Type-Options: nosniff
         - X-Frame-Options: DENY
@@ -65,9 +65,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Add HSTS header in production
         if settings.is_production:
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         return response
 
@@ -86,7 +84,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, jwt_manager: JWTManager, api_key_manager: APIKeyManager):
         """
         Initialize authentication middleware.
-        
+
         Args:
             app: FastAPI application
             jwt_manager: JWT manager instance
@@ -172,7 +170,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, authz_checker: AuthorizationChecker):
         """
         Initialize authorization middleware.
-        
+
         Args:
             app: FastAPI application
             authz_checker: Authorization checker instance
@@ -202,9 +200,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             return response
 
         except AuthorizationError as e:
-            logger.warning(
-                f"Authorization failed for user {request.state.user_id}: {e}"
-            )
+            logger.warning(f"Authorization failed for user {request.state.user_id}: {e}")
 
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -234,7 +230,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, rate_limiter: RateLimiter):
         """
         Initialize rate limit middleware.
-        
+
         Args:
             app: FastAPI application
             rate_limiter: Rate limiter instance
@@ -325,7 +321,7 @@ class AuditLoggingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, audit_logger: AuditLogger):
         """
         Initialize audit logging middleware.
-        
+
         Args:
             app: FastAPI application
             audit_logger: Audit logger instance
@@ -412,9 +408,7 @@ class AuditLoggingMiddleware(BaseHTTPMiddleware):
             "/api/v1/bob/blast-radius": AuditEventType.BLAST_RADIUS_COMPUTED,
         }
 
-        event_type = event_type_map.get(
-            endpoint, AuditEventType.REPOSITORY_ACCESSED
-        )
+        event_type = event_type_map.get(endpoint, AuditEventType.REPOSITORY_ACCESSED)
 
         self.audit_logger.log_event(
             event_type=event_type,
@@ -435,7 +429,7 @@ class AuditLoggingMiddleware(BaseHTTPMiddleware):
 def setup_cors_middleware(app, allowed_origins: Optional[list[str]] = None):
     """
     Configure CORS middleware for frontend access.
-    
+
     Args:
         app: FastAPI application
         allowed_origins: List of allowed origins (defaults to settings)

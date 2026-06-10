@@ -99,9 +99,7 @@ class TestMetricsManager:
                 method="GET", endpoint="/test", status="200"
             )._value._value
 
-            manager.http_requests_total.labels(
-                method="GET", endpoint="/test", status="200"
-            ).inc()
+            manager.http_requests_total.labels(method="GET", endpoint="/test", status="200").inc()
 
             new_value = manager.http_requests_total.labels(
                 method="GET", endpoint="/test", status="200"
@@ -113,9 +111,7 @@ class TestMetricsManager:
         """Test query duration histogram"""
         with patch("bob.config.settings.enable_metrics", True):
             manager = MetricsManager()
-            manager.query_duration_seconds.labels(query_type="semantic_search").observe(
-                0.5
-            )
+            manager.query_duration_seconds.labels(query_type="semantic_search").observe(0.5)
             # Histogram should record the observation
             assert True  # If no exception, test passes
 
@@ -227,9 +223,7 @@ class TestHealthCheckManager:
         manager = HealthCheckManager()
 
         async def unhealthy_check():
-            return HealthCheckResult(
-                status=HealthStatus.UNHEALTHY, error="Connection failed"
-            )
+            return HealthCheckResult(status=HealthStatus.UNHEALTHY, error="Connection failed")
 
         manager.register_check("test_check", unhealthy_check)
         results = await manager.run_checks()
@@ -294,9 +288,7 @@ class TestHealthCheckResult:
 
     def test_unhealthy_result(self):
         """Test creating an unhealthy result"""
-        result = HealthCheckResult(
-            status=HealthStatus.UNHEALTHY, error="Connection failed"
-        )
+        result = HealthCheckResult(status=HealthStatus.UNHEALTHY, error="Connection failed")
         assert result.status == HealthStatus.UNHEALTHY
         assert result.error == "Connection failed"
 

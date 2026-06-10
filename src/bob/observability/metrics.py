@@ -6,13 +6,13 @@ Metrics collection and export for monitoring system health and performance
 from typing import Optional
 
 from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
     Counter,
     Gauge,
     Histogram,
     Info,
-    CollectorRegistry,
     generate_latest,
-    CONTENT_TYPE_LATEST,
 )
 
 from bob.config import settings

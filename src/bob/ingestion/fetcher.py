@@ -55,7 +55,7 @@ class RepositoryMetadata:
 class RepositoryFetcher:
     """
     Fetches and manages repository clones with GitHub App authentication.
-    
+
     Responsibilities:
     - Clone repositories to ephemeral workspace
     - Handle incremental pulls on push webhooks
@@ -86,13 +86,13 @@ class RepositoryFetcher:
     def _get_github_client(self, installation_id: int) -> Github:
         """
         Get authenticated GitHub client for a specific installation.
-        
+
         Args:
             installation_id: GitHub App installation ID
-            
+
         Returns:
             Authenticated GitHub client
-            
+
         Raises:
             ConfigurationError: If authentication fails
         """
@@ -116,7 +116,7 @@ class RepositoryFetcher:
 
             # Get installation access token
             auth = integration.get_access_token(installation_id)
-            
+
             # Create authenticated client
             return Github(auth=Auth.Token(auth.token))
 
@@ -129,7 +129,7 @@ class RepositoryFetcher:
     def _create_workspace(self) -> Path:
         """
         Create ephemeral workspace directory for repository clones.
-        
+
         Returns:
             Path to workspace directory
         """
@@ -156,15 +156,15 @@ class RepositoryFetcher:
     ) -> tuple[Path, RepositoryMetadata]:
         """
         Clone a repository to ephemeral workspace.
-        
+
         Args:
             repo_url: GitHub repository URL (e.g., https://github.com/owner/repo)
             installation_id: GitHub App installation ID
             branch: Branch to clone (defaults to repository default branch)
-            
+
         Returns:
             Tuple of (workspace_path, repository_metadata)
-            
+
         Raises:
             RepositoryNotFoundError: If repository doesn't exist or is inaccessible
             RepositoryCloneError: If clone operation fails
@@ -227,9 +227,7 @@ class RepositoryFetcher:
 
             # Check SLA (FR-001: 10 seconds)
             if elapsed > 10:
-                logger.warning(
-                    f"Clone exceeded 10s SLA: {elapsed:.2f}s for {repo_url}"
-                )
+                logger.warning(f"Clone exceeded 10s SLA: {elapsed:.2f}s for {repo_url}")
 
             return repo_path, metadata
 
@@ -250,14 +248,14 @@ class RepositoryFetcher:
     ) -> tuple[list[CommitDiff], RepositoryMetadata]:
         """
         Pull latest updates for an existing repository clone.
-        
+
         Args:
             repo_path: Path to existing repository clone
             installation_id: GitHub App installation ID
-            
+
         Returns:
             Tuple of (list of commit diffs since last pull, updated metadata)
-            
+
         Raises:
             RepositoryCloneError: If pull operation fails
         """
@@ -266,7 +264,7 @@ class RepositoryFetcher:
 
         try:
             repo = git.Repo(repo_path)
-            
+
             # Get current HEAD before pull
             old_commit = repo.head.commit.hexsha
 
@@ -290,13 +288,12 @@ class RepositoryFetcher:
             repo_owner = parts[-2]
             repo_name = parts[-1].replace(".git", "")
             gh_repo = github_client.get_repo(f"{repo_owner}/{repo_name}")
-            
+
             metadata = self._extract_metadata(repo, gh_repo, repo_path)
 
             elapsed = (datetime.now() - start_time).total_seconds()
             logger.info(
-                f"Successfully pulled updates in {elapsed:.2f}s "
-                f"({len(diffs)} new commits)"
+                f"Successfully pulled updates in {elapsed:.2f}s " f"({len(diffs)} new commits)"
             )
 
             return diffs, metadata
@@ -315,22 +312,22 @@ class RepositoryFetcher:
     ) -> RepositoryMetadata:
         """
         Extract repository metadata.
-        
+
         Args:
             repo: GitPython Repo object
             gh_repo: PyGithub Repository object
             repo_path: Path to repository clone
-            
+
         Returns:
             Repository metadata
         """
         # Get last commit info
         last_commit = repo.head.commit
-        
+
         # Count files and lines
         total_files = 0
         total_lines = 0
-        
+
         for file_path in repo_path.rglob("*"):
             if file_path.is_file() and not self._should_skip_file(file_path):
                 total_files += 1
@@ -366,36 +363,36 @@ class RepositoryFetcher:
     ) -> list[CommitDiff]:
         """
         Extract diffs for commits between old and new commit.
-        
+
         Args:
             repo: GitPython Repo object
             old_commit: Old commit SHA
             new_commit: New commit SHA
-            
+
         Returns:
             List of commit diffs
         """
         diffs = []
-        
+
         # Get commits between old and new
         commits = list(repo.iter_commits(f"{old_commit}..{new_commit}"))
-        
+
         for commit in commits:
             # Get diff stats
             stats = commit.stats.total
-            
+
             # Get changed files
             files_changed = []
             if commit.parents:
                 parent = commit.parents[0]
                 diff_index = parent.diff(commit)
                 files_changed = [item.a_path or item.b_path for item in diff_index]
-            
+
             # Get full diff content
             diff_content = ""
             if commit.parents:
                 diff_content = repo.git.diff(commit.parents[0], commit)
-            
+
             diffs.append(
                 CommitDiff(
                     commit_sha=commit.hexsha,
@@ -408,16 +405,16 @@ class RepositoryFetcher:
                     diff_content=diff_content,
                 )
             )
-        
+
         return diffs
 
     def _should_skip_file(self, file_path: Path) -> bool:
         """
         Determine if a file should be skipped during processing.
-        
+
         Args:
             file_path: Path to file
-            
+
         Returns:
             True if file should be skipped
         """
@@ -466,22 +463,22 @@ class RepositoryFetcher:
     def get_file_content(self, repo_path: Path, file_path: str) -> str:
         """
         Get content of a specific file from repository.
-        
+
         Args:
             repo_path: Path to repository clone
             file_path: Relative path to file within repository
-            
+
         Returns:
             File content as string
-            
+
         Raises:
             FileNotFoundError: If file doesn't exist
         """
         full_path = repo_path / file_path
-        
+
         if not full_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
-        
+
         try:
             with open(full_path, "r", encoding="utf-8") as f:
                 return f.read()

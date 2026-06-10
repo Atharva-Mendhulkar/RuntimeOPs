@@ -36,9 +36,9 @@ class TestStructuralAnalyzer:
         # Create a package.json
         package_json = tmp_path / "package.json"
         package_json.write_text('{"name": "test-service", "dependencies": {"express": "^4.0.0"}}')
-        
+
         boundaries = self.analyzer._detect_service_boundaries(tmp_path)
-        
+
         assert len(boundaries) > 0
         npm_boundary = [b for b in boundaries if b.service_type == "npm"][0]
         assert npm_boundary.name == "test-service"
@@ -49,9 +49,9 @@ class TestStructuralAnalyzer:
         # Create a setup.py
         setup_py = tmp_path / "setup.py"
         setup_py.write_text('from setuptools import setup\nsetup(name="test-package")')
-        
+
         boundaries = self.analyzer._detect_service_boundaries(tmp_path)
-        
+
         assert len(boundaries) > 0
         python_boundary = [b for b in boundaries if b.service_type == "python_package"][0]
         assert python_boundary.name == tmp_path.name
@@ -112,9 +112,9 @@ class TestStructuralAnalyzer:
                 success=True,
             ),
         ]
-        
+
         self.analyzer._build_dependency_graph(tmp_path, parse_results)
-        
+
         # Check nodes were added
         assert self.analyzer.dependency_graph.number_of_nodes() == 2
         assert self.analyzer.dependency_graph.has_node("src/main.py")
@@ -126,10 +126,10 @@ class TestStructuralAnalyzer:
         self.analyzer.dependency_graph.add_edge("file1.py", "file2.py")
         self.analyzer.dependency_graph.add_edge("file2.py", "file3.py")
         self.analyzer.dependency_graph.add_edge("file1.py", "file4.py")
-        
+
         # Compute blast radius for file1.py
         affected = self.analyzer.compute_blast_radius(["file1.py"], max_hops=5)
-        
+
         # Should include file1 and all its descendants
         assert "file1.py" in affected
         assert "file2.py" in affected
@@ -143,13 +143,13 @@ class TestStructuralAnalyzer:
         self.analyzer.dependency_graph.add_edge("file3.py", "file2.py")
         self.analyzer.dependency_graph.add_edge("file2.py", "file4.py")
         self.analyzer.dependency_graph.add_edge("file2.py", "file5.py")
-        
+
         # file2 should have high ACS (high in-degree and out-degree)
         acs = self.analyzer.compute_architectural_criticality_score("file2.py")
-        
+
         assert acs > 0.0
         assert acs <= 1.0
-        
+
         # file1 should have lower ACS (only out-degree)
         acs_file1 = self.analyzer.compute_architectural_criticality_score("file1.py")
         assert acs_file1 < acs
@@ -176,15 +176,15 @@ class TestIngestOrchestrator:
         python_parser = self.orchestrator._get_parser_for_file(Path("test.py"))
         assert python_parser is not None
         assert python_parser.language_name == "python"
-        
+
         ts_parser = self.orchestrator._get_parser_for_file(Path("test.ts"))
         assert ts_parser is not None
         assert ts_parser.language_name == "typescript"
-        
+
         js_parser = self.orchestrator._get_parser_for_file(Path("test.js"))
         assert js_parser is not None
         assert js_parser.language_name == "javascript"
-        
+
         # Unknown extension
         unknown_parser = self.orchestrator._get_parser_for_file(Path("test.xyz"))
         assert unknown_parser is None
@@ -194,14 +194,14 @@ class TestIngestOrchestrator:
         # Should parse
         assert self.orchestrator._should_parse_file(Path("src/main.py"))
         assert self.orchestrator._should_parse_file(Path("lib/utils.ts"))
-        
+
         # Should skip
         assert not self.orchestrator._should_parse_file(Path("node_modules/package/index.js"))
         assert not self.orchestrator._should_parse_file(Path("venv/lib/python3.11/site.py"))
         assert not self.orchestrator._should_parse_file(Path("tests/test_main.py"))
         assert not self.orchestrator._should_parse_file(Path(".git/config"))
 
-    @patch('bob.ingestion.orchestrator.RepositoryFetcher')
+    @patch("bob.ingestion.orchestrator.RepositoryFetcher")
     def test_fetch_repository(self, mock_fetcher_class):
         """Test repository fetching"""
         # Mock the fetcher
@@ -210,13 +210,11 @@ class TestIngestOrchestrator:
         mock_metadata.total_lines = 1000
         mock_fetcher.clone_repository.return_value = (Path("/tmp/repo"), mock_metadata)
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
-        
+
         repo_path, metadata = self.orchestrator._fetch_repository(
-            "https://github.com/test/repo",
-            12345,
-            None
+            "https://github.com/test/repo", 12345, None
         )
-        
+
         assert repo_path == Path("/tmp/repo")
         assert metadata.total_lines == 1000
         mock_fetcher.clone_repository.assert_called_once()
@@ -224,20 +222,20 @@ class TestIngestOrchestrator:
     def test_save_and_get_checkpoint(self):
         """Test checkpoint management"""
         job_id = "test_job_123"
-        
+
         # Save checkpoint
         self.orchestrator._save_checkpoint(
             job_id,
             IngestionStatus.PARSING,
             repo_path=Path("/tmp/repo"),
         )
-        
+
         # Verify checkpoint exists
         assert job_id in self.orchestrator._checkpoints
         checkpoint = self.orchestrator._checkpoints[job_id]
         assert checkpoint.status == IngestionStatus.PARSING
         assert checkpoint.repo_path == Path("/tmp/repo")
-        
+
         # Get progress
         progress = self.orchestrator.get_progress(job_id)
         assert progress is not None
@@ -257,11 +255,11 @@ def hello():
     """Say hello"""
     return "Hello, World!"
 ''')
-        
+
         # This would be a full integration test
         # For now, just verify the file exists
         assert test_file.exists()
-        
+
         # In a real test, we would:
         # 1. Mock RepositoryFetcher to return tmp_path
         # 2. Run orchestrator.ingest_repository()

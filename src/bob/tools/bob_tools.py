@@ -62,22 +62,22 @@ def semantic_search(
 ) -> list[CodeSearchResult]:
     """
     Search code semantically across repository.
-    
+
     Uses vector embeddings to find code units matching the natural language query.
     Returns top-K results with confidence scores.
-    
+
     Args:
         query: Natural language search query (e.g., "authentication middleware")
         repo_id: Repository UUID to search within
         k: Number of results to return (default: 10, max: 50)
-    
+
     Returns:
         List of CodeSearchResult objects with file paths, symbols, and confidence scores
-    
+
     Raises:
         QueryError: If search fails
         QueryTimeoutError: If search times out
-    
+
     Example:
         >>> results = semantic_search(
         ...     query="database connection pool",
@@ -88,10 +88,10 @@ def semantic_search(
         ...     print(f"{result.file_path}:{result.symbol_name} (confidence: {result.confidence})")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Semantic search: query='{query[:50]}...', repo_id={repo_id}, k={k}")
-        
+
         # Call REST endpoint EP-001
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
@@ -105,7 +105,7 @@ def semantic_search(
             )
             response.raise_for_status()
             data = response.json()
-        
+
         # Convert to CodeSearchResult models
         results = [
             CodeSearchResult(
@@ -121,12 +121,12 @@ def semantic_search(
             )
             for r in data["results"]
         ]
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"Semantic search completed: {len(results)} results in {elapsed_ms:.2f}ms")
-        
+
         return results
-    
+
     except httpx.TimeoutException as e:
         raise QueryTimeoutError(f"Semantic search timed out: {e}")
     except httpx.HTTPError as e:
@@ -152,20 +152,20 @@ def resolve_stack_trace(
 ) -> list[StackFrame]:
     """
     Resolve stack trace to repository file paths.
-    
+
     Parses stack trace (supports Python, Java, JS, Go) and resolves module paths
     to file paths using the dependency graph. Returns frames with git blame info.
-    
+
     Args:
         trace_text: Raw stack trace text
         repo_id: Repository UUID
-    
+
     Returns:
         List of StackFrame objects with resolved file paths and git blame
-    
+
     Raises:
         QueryError: If resolution fails
-    
+
     Example:
         >>> trace = '''
         ... Traceback (most recent call last):
@@ -178,10 +178,10 @@ def resolve_stack_trace(
         ...         print(f"{frame.file_path}:{frame.line_number} in {frame.function}")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Resolving stack trace for repo_id={repo_id}")
-        
+
         # Call REST endpoint EP-002
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
@@ -194,7 +194,7 @@ def resolve_stack_trace(
             )
             response.raise_for_status()
             data = response.json()
-        
+
         # Convert to StackFrame models
         frames = [
             StackFrame(
@@ -207,15 +207,15 @@ def resolve_stack_trace(
             )
             for f in data["frames"]
         ]
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         resolved_count = sum(1 for f in frames if f.file_path)
         logger.info(
             f"Stack trace resolved: {resolved_count}/{len(frames)} frames in {elapsed_ms:.2f}ms"
         )
-        
+
         return frames
-    
+
     except httpx.HTTPError as e:
         raise QueryError(f"Stack trace resolution failed: {e}")
     except Exception as e:
@@ -241,22 +241,22 @@ def get_dependency_graph(
 ) -> DependencyGraph:
     """
     Retrieve file dependency graph.
-    
+
     Traverses Neo4j graph to find dependencies within N hops.
     Returns adjacency list of dependency edges.
-    
+
     Args:
         file_path: File path to analyze
         repo_id: Repository UUID
         hops: Number of hops to traverse (default: 3, max: 10)
         direction: Traversal direction ('upstream', 'downstream', or 'both')
-    
+
     Returns:
         DependencyGraph with edges and node counts
-    
+
     Raises:
         QueryError: If graph query fails
-    
+
     Example:
         >>> graph = get_dependency_graph(
         ...     file_path="src/auth/middleware.py",
@@ -267,12 +267,12 @@ def get_dependency_graph(
         >>> print(f"Found {graph.node_count} nodes and {graph.edge_count} edges")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(
             f"Getting dependency graph: file={file_path}, hops={hops}, direction={direction}"
         )
-        
+
         # Call REST endpoint EP-003
         with httpx.Client(timeout=30.0) as client:
             response = client.get(
@@ -287,10 +287,10 @@ def get_dependency_graph(
             )
             response.raise_for_status()
             data = response.json()
-        
+
         # Convert to DependencyGraph model
         from bob.tools.models import DependencyEdge
-        
+
         edges = [
             DependencyEdge(
                 source=e["source"],
@@ -300,13 +300,13 @@ def get_dependency_graph(
             )
             for e in data["edges"]
         ]
-        
+
         # Extract unique nodes from edges
         nodes = {file_path}
         for edge in edges:
             nodes.add(edge.source)
             nodes.add(edge.target)
-        
+
         graph = DependencyGraph(
             root_file=file_path,
             edges=edges,
@@ -315,15 +315,15 @@ def get_dependency_graph(
             edge_count=len(edges),
             max_hops=hops,
         )
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(
             f"Dependency graph retrieved: {graph.node_count} nodes, "
             f"{graph.edge_count} edges in {elapsed_ms:.2f}ms"
         )
-        
+
         return graph
-    
+
     except httpx.HTTPError as e:
         raise QueryError(f"Dependency graph query failed: {e}")
     except Exception as e:
@@ -347,20 +347,20 @@ def get_blast_radius(
 ) -> BlastRadiusResult:
     """
     Compute blast radius for changed files.
-    
+
     Computes union of downstream dependency subgraphs for a list of files.
     Returns sorted list with ACS (Architectural Criticality Score) weights.
-    
+
     Args:
         files: List of changed file paths (max 100)
         repo_id: Repository UUID
-    
+
     Returns:
         BlastRadiusResult with impacted files sorted by ACS
-    
+
     Raises:
         QueryError: If blast radius computation fails
-    
+
     Example:
         >>> result = get_blast_radius(
         ...     files=["src/db/models/user.py"],
@@ -371,10 +371,10 @@ def get_blast_radius(
         ...     print(f"{file.file_path} (ACS: {file.acs_score})")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Computing blast radius for {len(files)} files")
-        
+
         # Call REST endpoint EP-004
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
@@ -387,10 +387,10 @@ def get_blast_radius(
             )
             response.raise_for_status()
             data = response.json()
-        
+
         # Convert to BlastRadiusResult model
         from bob.tools.models import ImpactedFile
-        
+
         impacted_files = [
             ImpactedFile(
                 file_path=f["file_path"],
@@ -401,21 +401,21 @@ def get_blast_radius(
             )
             for f in data["impacted_files"]
         ]
-        
+
         result = BlastRadiusResult(
             changed_files=data["changed_files"],
             impacted_files=impacted_files,
             total_impacted=data["total_impacted"],
             affected_services=data["affected_services"],
         )
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(
             f"Blast radius computed: {result.total_impacted} impacted files in {elapsed_ms:.2f}ms"
         )
-        
+
         return result
-    
+
     except httpx.HTTPError as e:
         raise QueryError(f"Blast radius computation failed: {e}")
     except Exception as e:
@@ -439,21 +439,21 @@ def get_file_content(
 ) -> FileContent:
     """
     Fetch file content and metadata.
-    
+
     Checks Redis cache first, falls back to Git if cache miss.
     Returns file content with parsed symbols (functions, classes, imports).
-    
+
     Args:
         file_path: File path relative to repository root
         repo_id: Repository UUID
-    
+
     Returns:
         FileContent with content and parsed metadata
-    
+
     Raises:
         ResourceNotFoundError: If file not found
         QueryError: If retrieval fails
-    
+
     Example:
         >>> content = get_file_content(
         ...     file_path="src/auth/middleware.py",
@@ -463,10 +463,10 @@ def get_file_content(
         >>> print(f"Imports: {', '.join(content.imports)}")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Fetching file content: {file_path}")
-        
+
         # Call REST endpoint EP-005
         with httpx.Client(timeout=30.0) as client:
             response = client.get(
@@ -477,16 +477,16 @@ def get_file_content(
                 },
                 headers={"Authorization": f"Bearer {settings.bob_api_key}"},
             )
-            
+
             if response.status_code == 404:
                 raise ResourceNotFoundError(f"File not found: {file_path}")
-            
+
             response.raise_for_status()
             data = response.json()
-        
+
         # Convert to FileContent model
         from bob.tools.models import FileSymbol
-        
+
         symbols = [
             FileSymbol(
                 name=s["name"],
@@ -497,7 +497,7 @@ def get_file_content(
             )
             for s in data.get("symbols", [])
         ]
-        
+
         content = FileContent(
             file_path=data["file_path"],
             content=data["content"],
@@ -507,12 +507,12 @@ def get_file_content(
             imports=data.get("imports", []),
             last_modified=None,
         )
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"File content retrieved: {file_path} in {elapsed_ms:.2f}ms")
-        
+
         return content
-    
+
     except httpx.HTTPError as e:
         if e.response and e.response.status_code == 404:
             raise ResourceNotFoundError(f"File not found: {file_path}")
@@ -538,20 +538,20 @@ def get_commit_diff(
 ) -> CommitDiff:
     """
     Fetch git diff for commit with impact analysis.
-    
+
     Fetches git diff, parses changed files, queries dependency edges,
     and returns impact analysis with related test files.
-    
+
     Args:
         commit_sha: Commit SHA (short or full)
         repo_id: Repository UUID
-    
+
     Returns:
         CommitDiff with changed files and impact analysis
-    
+
     Raises:
         QueryError: If commit diff retrieval fails
-    
+
     Example:
         >>> diff = get_commit_diff(
         ...     commit_sha="abc123",
@@ -561,10 +561,10 @@ def get_commit_diff(
         >>> print(f"Changed {len(diff.changed_files)} files")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Fetching commit diff: {commit_sha}")
-        
+
         # Call REST endpoint EP-006
         with httpx.Client(timeout=30.0) as client:
             response = client.get(
@@ -577,10 +577,10 @@ def get_commit_diff(
             )
             response.raise_for_status()
             data = response.json()
-        
+
         # Convert to CommitDiff model
         from bob.tools.models import ChangedFile
-        
+
         changed_files = [
             ChangedFile(
                 file_path=f["file_path"],
@@ -592,7 +592,7 @@ def get_commit_diff(
             )
             for f in data.get("changed_files", [])
         ]
-        
+
         diff = CommitDiff(
             commit_sha=data["commit_sha"],
             author=data.get("author"),
@@ -602,12 +602,12 @@ def get_commit_diff(
             total_additions=data.get("total_additions", 0),
             total_deletions=data.get("total_deletions", 0),
         )
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"Commit diff retrieved: {commit_sha} in {elapsed_ms:.2f}ms")
-        
+
         return diff
-    
+
     except httpx.HTTPError as e:
         raise QueryError(f"Commit diff retrieval failed: {e}")
     except Exception as e:
@@ -631,20 +631,20 @@ def get_test_map(
 ) -> list[str]:
     """
     Get test files that import or reference source files.
-    
+
     Queries Neo4j for test files using naming conventions (test_*.py, *.test.ts)
     and import relationships.
-    
+
     Args:
         source_files: List of source file paths
         repo_id: Repository UUID
-    
+
     Returns:
         List of test file paths
-    
+
     Raises:
         QueryError: If test map query fails
-    
+
     Example:
         >>> tests = get_test_map(
         ...     source_files=["src/auth/middleware.py"],
@@ -653,14 +653,14 @@ def get_test_map(
         >>> print(f"Found {len(tests)} test files")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Getting test map for {len(source_files)} source files")
-        
+
         # Query Neo4j for test files
         with GraphQuery() as graph_query:
             test_files = set()
-            
+
             for source_file in source_files:
                 # Get files that import this source file
                 deps = graph_query.get_dependencies(
@@ -669,19 +669,19 @@ def get_test_map(
                     direction="downstream",
                     max_hops=2,
                 )
-                
+
                 # Filter for test files using naming conventions
                 for downstream_file in deps.get("downstream", []):
                     if _is_test_file(downstream_file):
                         test_files.add(downstream_file)
-        
+
         result = sorted(list(test_files))
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"Test map retrieved: {len(result)} test files in {elapsed_ms:.2f}ms")
-        
+
         return result
-    
+
     except Exception as e:
         logger.error(f"Test map error: {e}", exc_info=True)
         raise QueryError(f"Test map query failed: {e}")
@@ -690,29 +690,29 @@ def get_test_map(
 def _is_test_file(file_path: str) -> bool:
     """Check if file is a test file based on naming conventions"""
     file_name = file_path.split("/")[-1].lower()
-    
+
     # Python: test_*.py, *_test.py
     if file_name.startswith("test_") and file_name.endswith(".py"):
         return True
     if file_name.endswith("_test.py"):
         return True
-    
+
     # JavaScript/TypeScript: *.test.js, *.test.ts, *.spec.js, *.spec.ts
     if file_name.endswith((".test.js", ".test.ts", ".spec.js", ".spec.ts")):
         return True
-    
+
     # Java: *Test.java
     if file_name.endswith("test.java"):
         return True
-    
+
     # Go: *_test.go
     if file_name.endswith("_test.go"):
         return True
-    
+
     # Check if in test directory
     if "/test/" in file_path or "/tests/" in file_path:
         return True
-    
+
     return False
 
 
@@ -732,20 +732,20 @@ def get_conventions(
 ) -> dict[str, Any]:
     """
     Get coding conventions for a service.
-    
+
     Fetches from Redis cache (24-hour TTL). Returns naming conventions,
     error handling patterns, and import order conventions.
-    
+
     Args:
         service_path: Service path (e.g., "services/auth")
         repo_id: Repository UUID
-    
+
     Returns:
         Dictionary with naming, error handling, and import conventions
-    
+
     Raises:
         QueryError: If conventions retrieval fails
-    
+
     Example:
         >>> conventions = get_conventions(
         ...     service_path="services/auth",
@@ -755,20 +755,20 @@ def get_conventions(
         >>> print(f"Error handling: {conventions['error_handling']}")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Getting conventions for service: {service_path}")
-        
+
         # Try cache first
         cache_key = f"conventions:{repo_id}:{service_path}"
-        
+
         with FileCache() as cache:
             cached_conventions = cache.get("conventions", cache_key)
-            
+
             if cached_conventions:
                 logger.debug(f"Cache hit for conventions: {service_path}")
                 return cached_conventions
-        
+
         # Cache miss - query from ingestion layer
         # TODO: Implement convention extraction from ingestion layer
         # For now, return default conventions
@@ -787,16 +787,16 @@ def get_conventions(
                 "style": "absolute",
             },
         }
-        
+
         # Cache for 24 hours
         with FileCache() as cache:
             cache.set("conventions", cache_key, conventions, ttl=86400)
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"Conventions retrieved for {service_path} in {elapsed_ms:.2f}ms")
-        
+
         return conventions
-    
+
     except Exception as e:
         logger.error(f"Conventions retrieval error: {e}", exc_info=True)
         raise QueryError(f"Conventions retrieval failed: {e}")
@@ -818,21 +818,21 @@ def get_risk_context(
 ) -> list[RiskContext]:
     """
     Get risk context for files.
-    
+
     Queries Neo4j for ACS scores and downstream service counts.
     Queries PostgreSQL for last-incident association.
     Returns risk metadata per file.
-    
+
     Args:
         files: List of file paths
         repo_id: Repository UUID
-    
+
     Returns:
         List of RiskContext objects with risk metadata
-    
+
     Raises:
         QueryError: If risk context query fails
-    
+
     Example:
         >>> contexts = get_risk_context(
         ...     files=["src/db/models/user.py"],
@@ -842,12 +842,12 @@ def get_risk_context(
         ...     print(f"{ctx.file_path}: {ctx.risk_level} (ACS: {ctx.acs_score})")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Getting risk context for {len(files)} files")
-        
+
         risk_contexts = []
-        
+
         with GraphQuery() as graph_query:
             for file_path in files:
                 try:
@@ -856,12 +856,12 @@ def get_risk_context(
                         repo_id=UUID(repo_id),
                         file_path=file_path,
                     )
-                    
+
                     # Calculate ACS based on fan-in/fan-out
                     fan_in = metrics.get("fan_in", 0)
                     fan_out = metrics.get("fan_out", 0)
                     acs_score = min((fan_in + fan_out) / 10.0, 1.0)
-                    
+
                     # Get downstream service count
                     deps = graph_query.get_dependencies(
                         repo_id=UUID(repo_id),
@@ -870,7 +870,7 @@ def get_risk_context(
                         max_hops=5,
                     )
                     downstream_count = len(deps.get("downstream", []))
-                    
+
                     # Determine risk level
                     if acs_score >= 0.8 or downstream_count >= 10:
                         risk_level = "CRITICAL"
@@ -880,7 +880,7 @@ def get_risk_context(
                         risk_level = "MEDIUM"
                     else:
                         risk_level = "LOW"
-                    
+
                     risk_contexts.append(
                         RiskContext(
                             file_path=file_path,
@@ -892,7 +892,7 @@ def get_risk_context(
                             risk_level=risk_level,
                         )
                     )
-                
+
                 except Exception as e:
                     logger.warning(f"Failed to get risk context for {file_path}: {e}")
                     # Add default risk context
@@ -907,12 +907,12 @@ def get_risk_context(
                             risk_level="MEDIUM",
                         )
                     )
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"Risk context retrieved for {len(files)} files in {elapsed_ms:.2f}ms")
-        
+
         return risk_contexts
-    
+
     except Exception as e:
         logger.error(f"Risk context error: {e}", exc_info=True)
         raise QueryError(f"Risk context query failed: {e}")
@@ -934,19 +934,19 @@ def trigger_reindex(
 ) -> str:
     """
     Trigger repository reindexing.
-    
+
     Enqueues an ingest job in Redis queue. Returns job_id for status polling.
-    
+
     Args:
         repo_id: Repository UUID
         scope: Reindex scope ('incremental' or 'full')
-    
+
     Returns:
         Job ID for status polling
-    
+
     Raises:
         QueryError: If reindex trigger fails
-    
+
     Example:
         >>> job_id = trigger_reindex(
         ...     repo_id="550e8400-...",
@@ -955,18 +955,18 @@ def trigger_reindex(
         >>> print(f"Reindex job started: {job_id}")
     """
     start_time = time.time()
-    
+
     try:
         logger.info(f"Triggering reindex: repo_id={repo_id}, scope={scope}")
-        
+
         if scope not in ("incremental", "full"):
             raise QueryError(f"Invalid scope: {scope}. Must be 'incremental' or 'full'")
-        
+
         # Enqueue job in Redis
         import uuid
-        
+
         job_id = str(uuid.uuid4())
-        
+
         with FileCache() as cache:
             # Store job in queue
             job_data = {
@@ -976,18 +976,18 @@ def trigger_reindex(
                 "status": "queued",
                 "created_at": time.time(),
             }
-            
+
             # Add to queue (using Redis list as queue)
             cache.redis_client.lpush("ingest_queue", str(job_data))
-            
+
             # Store job status
             cache.set("job_status", job_id, job_data, ttl=86400)
-        
+
         elapsed_ms = (time.time() - start_time) * 1000
         logger.info(f"Reindex triggered: job_id={job_id} in {elapsed_ms:.2f}ms")
-        
+
         return job_id
-    
+
     except Exception as e:
         logger.error(f"Reindex trigger error: {e}", exc_info=True)
         raise QueryError(f"Reindex trigger failed: {e}")

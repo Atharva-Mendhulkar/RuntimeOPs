@@ -4,9 +4,8 @@ Tool definitions and state management for LangGraph agents
 """
 
 import logging
-from typing import Any, Callable
+from typing import Any
 
-from bob.tools import bob_tools
 from bob.tools.client import BobClient
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,7 @@ def create_bob_tools(client: BobClient | None = None) -> list[dict[str, Any]]:
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Natural language search query (e.g., 'authentication middleware')",
+                        "description": "Natural language search query (e.g., 'authentication middleware')",  # noqa: E501
                     },
                     "repo_id": {
                         "type": "string",
@@ -119,7 +118,7 @@ def create_bob_tools(client: BobClient | None = None) -> list[dict[str, Any]]:
                 },
                 "required": ["file_path", "repo_id"],
             },
-            "function": lambda file_path, repo_id, hops=3, direction="both": client.get_dependency_graph(
+            "function": lambda file_path, repo_id, hops=3, direction="both": client.get_dependency_graph(  # noqa: E501
                 file_path, repo_id, hops, direction
             ),
         },

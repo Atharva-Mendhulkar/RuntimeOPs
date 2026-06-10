@@ -5,7 +5,7 @@ Comprehensive input validation to prevent injection attacks
 
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator

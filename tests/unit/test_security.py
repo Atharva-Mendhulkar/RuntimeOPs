@@ -3,16 +3,13 @@ IBM Bob - Security Unit Tests
 Tests for authentication, authorization, rate limiting, and validation
 """
 
-import time
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from datetime import timedelta
+from unittest.mock import Mock
 
 import pytest
 
 from bob.exceptions import (
-    AuthenticationError,
     AuthorizationError,
-    EncryptionError,
     InvalidQueryError,
     InvalidTokenError,
     RateLimitExceededError,

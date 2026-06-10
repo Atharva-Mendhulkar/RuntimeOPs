@@ -5,7 +5,7 @@ Tests for cache, registry, and storage utilities
 
 import json
 from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest

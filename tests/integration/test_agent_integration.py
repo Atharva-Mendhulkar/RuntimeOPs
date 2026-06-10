@@ -20,7 +20,6 @@ from bob.tools.langgraph_integration import (
     AgentToolset,
     BobStateManager,
     create_bob_tools,
-    create_tool_node,
 )
 
 # ============================================================================

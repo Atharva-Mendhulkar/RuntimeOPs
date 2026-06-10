@@ -5,7 +5,7 @@ Tests for common security vulnerabilities and attack vectors
 
 import pytest
 
-from bob.exceptions import AuthenticationError, InvalidQueryError
+from bob.exceptions import InvalidQueryError
 from bob.security.validation import QueryValidator, sanitize_error_message
 
 
@@ -221,7 +221,6 @@ class TestInputValidation:
 
     def test_special_characters(self):
         """Test handling of special characters"""
-        from bob.security.validation import RequestValidator
 
         # Null bytes should be removed
         query_with_nulls = "search\x00query"

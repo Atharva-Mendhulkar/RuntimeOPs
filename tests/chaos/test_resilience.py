@@ -4,7 +4,6 @@ Tests for system resilience under failure conditions
 """
 
 import asyncio
-from typing import Any, Dict
 
 import pytest
 
@@ -321,7 +320,7 @@ class TestResourceExhaustion:
         successful = sum(
             1 for r in responses if not isinstance(r, Exception) and r.status_code == 200
         )
-        failed = len(responses) - successful
+        len(responses) - successful
 
         # At least 80% should succeed
         success_rate = successful / len(responses)

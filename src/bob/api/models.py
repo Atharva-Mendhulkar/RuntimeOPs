@@ -87,7 +87,7 @@ class StackTraceRequest(BaseModel):
         min_length=10,
         description="Raw stack trace text",
         examples=[
-            "Traceback (most recent call last):\n  File 'app.py', line 42, in handler\n    process_request()"
+            "Traceback (most recent call last):\n  File 'app.py', line 42, in handler\n    process_request()"  # noqa: E501
         ],
     )
 

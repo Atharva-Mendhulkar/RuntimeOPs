@@ -125,7 +125,7 @@ class Settings(BaseSettings):
     def redis_url(self) -> str:
         """Build Redis connection URL"""
         if self.redis_password:
-            return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+            return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"  # noqa: E501
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     @property

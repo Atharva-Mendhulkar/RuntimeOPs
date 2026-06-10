@@ -283,10 +283,10 @@ class APIKeyManager:
         """
         # Extract secret from API key
         if api_key.startswith(self.key_prefix_live):
-            secret = api_key[len(self.key_prefix_live) :]
+            secret = api_key[len(self.key_prefix_live) :]  # noqa: E203
             environment = "live"
         elif api_key.startswith(self.key_prefix_test):
-            secret = api_key[len(self.key_prefix_test) :]
+            secret = api_key[len(self.key_prefix_test) :]  # noqa: E203
             environment = "test"
         else:
             raise AuthenticationError("Invalid API key format")
@@ -351,7 +351,7 @@ class APIKeyManager:
         cursor = self.db.cursor()
         cursor.execute(
             """
-            SELECT key_id, name, scopes, environment, created_at, 
+            SELECT key_id, name, scopes, environment, created_at,
                    last_used_at, expires_at, revoked
             FROM api_keys
             WHERE user_id = %s
@@ -440,8 +440,8 @@ class APIKeyManager:
         cursor = self.db.cursor()
         cursor.execute(
             """
-            INSERT INTO api_keys 
-            (key_id, user_id, name, hashed_secret, scopes, environment, 
+            INSERT INTO api_keys
+            (key_id, user_id, name, hashed_secret, scopes, environment,
              created_at, expires_at, usage_count, revoked)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 0, FALSE)
             """,

@@ -6,7 +6,6 @@ Simulates realistic user load patterns for performance testing
 import random
 
 from locust import HttpUser, between, events, task
-from locust.exception import RescheduleTask
 
 # ============================================================================
 # Configuration
@@ -316,7 +315,7 @@ def on_test_start(environment, **kwargs):
     print("=" * 80)
     print(f"Target: {environment.host}")
     print(
-        f"Users: {environment.runner.target_user_count if hasattr(environment.runner, 'target_user_count') else 'N/A'}"
+        f"Users: {environment.runner.target_user_count if hasattr(environment.runner, 'target_user_count') else 'N/A'}"  # noqa: E501
     )
     print("=" * 80 + "\n")
 
@@ -359,7 +358,7 @@ def on_test_stop(environment, **kwargs):
 # ============================================================================
 
 
-from locust import LoadTestShape
+from locust import LoadTestShape  # noqa: E402
 
 
 class StepLoadShape(LoadTestShape):
@@ -448,13 +447,13 @@ Run load tests with different configurations:
    locust -f locustfile.py --host=http://localhost:8000 --headless -u 100 -r 10 -t 5m
 
 4. Search-heavy workload:
-   locust -f locustfile.py --host=http://localhost:8000 --headless -u 50 -r 5 --class-picker SearchHeavyUser
+   locust -f locustfile.py --host=http://localhost:8000 --headless -u 50 -r 5 --class-picker SearchHeavyUser  # noqa: E501
 
 5. With step load shape:
    locust -f locustfile.py --host=http://localhost:8000 --headless --class-picker StepLoadShape
 
 6. Generate HTML report:
-   locust -f locustfile.py --host=http://localhost:8000 --headless -u 100 -r 10 -t 5m --html=report.html
+   locust -f locustfile.py --host=http://localhost:8000 --headless -u 100 -r 10 -t 5m --html=report.html  # noqa: E501
 
 Parameters:
   -u, --users: Number of concurrent users

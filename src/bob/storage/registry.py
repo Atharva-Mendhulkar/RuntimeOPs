@@ -9,7 +9,6 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
-    Boolean,
     Column,
     DateTime,
     Float,

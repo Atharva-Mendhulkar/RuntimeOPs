@@ -4,7 +4,7 @@ Permission scopes, roles, and authorization checks
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from bob.exceptions import AuthorizationError
 

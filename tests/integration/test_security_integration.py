@@ -4,9 +4,7 @@ End-to-end tests for authentication, authorization, and security flows
 """
 
 import pytest
-from fastapi.testclient import TestClient
 
-from bob.exceptions import AuthenticationError, AuthorizationError
 from bob.security.auth import APIKeyManager, JWTManager
 from bob.security.rbac import Role
 
@@ -129,7 +127,7 @@ class TestAuditLoggingFlow:
 
     def test_audit_trail_creation(self, mock_db):
         """Test complete audit trail creation"""
-        from bob.security.audit import AuditEventType, AuditLogger
+        from bob.security.audit import AuditLogger
 
         logger = AuditLogger(mock_db)
 

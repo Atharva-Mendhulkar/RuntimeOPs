@@ -3,7 +3,6 @@ IBM Bob - Observability Integration Tests
 End-to-end tests for observability components
 """
 
-import asyncio
 import time
 from unittest.mock import patch
 
@@ -15,7 +14,6 @@ from bob.observability.health import (
     HealthCheckManager,
     HealthCheckResult,
     HealthStatus,
-    register_default_checks,
 )
 from bob.observability.logging import bind_context, clear_context, get_logger
 from bob.observability.metrics import get_metrics_manager
@@ -75,7 +73,7 @@ class TestTracingIntegration:
             with tracing_manager.create_span(
                 "test_operation",
                 attributes={"test.key": "test_value"},
-            ) as span:
+            ):
                 # Simulate work
                 time.sleep(0.01)
 
@@ -300,7 +298,7 @@ class TestObservabilityEndToEnd:
                 health_manager = HealthCheckManager()
 
                 # Simulate operation with full observability
-                with tracing_manager.create_span("test_operation") as span:
+                with tracing_manager.create_span("test_operation"):
                     # Bind logging context
                     bind_context(operation="test", trace_id=tracing_manager.get_trace_id())
 

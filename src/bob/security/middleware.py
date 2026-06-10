@@ -5,7 +5,7 @@ FastAPI middleware for authentication, authorization, and rate limiting
 
 import logging
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import Callable, Optional
 from uuid import uuid4
 
 from fastapi import Request, Response, status

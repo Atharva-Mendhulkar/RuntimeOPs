@@ -3,7 +3,6 @@ IBM Bob - Agent Tool Suite
 10 tools for RuntimeOps agents to interact with Bob's knowledge graph
 """
 
-import asyncio
 import logging
 import time
 from typing import Any
@@ -17,11 +16,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from bob.api.models import (
-    BlastRadiusRequest,
-    SearchRequest,
-    StackTraceRequest,
-)
 from bob.config import get_settings
 from bob.exceptions import (
     QueryError,
@@ -30,7 +24,6 @@ from bob.exceptions import (
 )
 from bob.graph.query import GraphQuery
 from bob.storage.cache import FileCache
-from bob.storage.registry import IndexRegistryManager
 from bob.tools.models import (
     BlastRadiusResult,
     CodeSearchResult,

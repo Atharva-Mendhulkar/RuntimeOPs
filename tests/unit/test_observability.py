@@ -5,7 +5,7 @@ Tests for tracing, metrics, logging, health checks, and performance monitoring
 
 import asyncio
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -54,7 +54,7 @@ class TestTracingManager:
                 "test.number": 42,
                 "test.bool": True,
             }
-            with manager.create_span("test_operation", attributes=attributes) as span:
+            with manager.create_span("test_operation", attributes=attributes):
                 pass  # Span should be created with attributes
 
     def test_get_trace_id(self):

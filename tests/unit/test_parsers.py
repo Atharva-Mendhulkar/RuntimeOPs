@@ -64,14 +64,14 @@ def hello_world():
         code = '''
 class Calculator:
     """A simple calculator"""
-    
+
     def __init__(self):
         self.result = 0
-    
+
     def add(self, x: int, y: int) -> int:
         """Add two numbers"""
         return x + y
-    
+
     def subtract(self, x: int, y: int) -> int:
         """Subtract two numbers"""
         return x - y

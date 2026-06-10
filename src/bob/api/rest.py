@@ -12,20 +12,14 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import JSONResponse
 
 from bob.api.models import (
     BatchRequest,
     BatchResponse,
     BlastRadiusRequest,
     BlastRadiusResponse,
-    CommitDiffRequest,
     CommitDiffResponse,
-    DependencyGraphRequest,
     DependencyGraphResponse,
-    ErrorDetail,
-    ErrorResponse,
-    FileRequest,
     FileResponse,
     HealthResponse,
     ImpactedFile,
@@ -39,8 +33,6 @@ from bob.api.models import (
 )
 from bob.config import get_settings
 from bob.exceptions import (
-    QueryError,
-    QueryTimeoutError,
     ResourceNotFoundError,
 )
 from bob.graph.query import GraphQuery
@@ -222,7 +214,7 @@ async def resolve_stack_trace(
         resolved_count = sum(1 for f in resolved_frames if f.get("file_path"))
 
         logger.info(
-            f"Stack trace resolved: {resolved_count}/{len(resolved_frames)} frames in {query_time_ms:.2f}ms"
+            f"Stack trace resolved: {resolved_count}/{len(resolved_frames)} frames in {query_time_ms:.2f}ms"  # noqa: E501
         )
 
         return StackTraceResponse(
@@ -362,7 +354,7 @@ async def get_dependency_graph(
         query_time_ms = (time.time() - start_time) * 1000
 
         logger.info(
-            f"Dependency graph retrieved: {len(nodes)} nodes, {len(edges)} edges in {query_time_ms:.2f}ms"
+            f"Dependency graph retrieved: {len(nodes)} nodes, {len(edges)} edges in {query_time_ms:.2f}ms"  # noqa: E501
         )
 
         return DependencyGraphResponse(
@@ -632,7 +624,7 @@ async def health_check() -> HealthResponse:
 
         # Check Neo4j
         try:
-            with GraphQuery() as graph_query:
+            with GraphQuery():
                 # Simple connectivity check
                 services["neo4j"] = "healthy"
         except Exception as e:
@@ -761,7 +753,7 @@ async def batch_query(
         total_time_ms = (time.time() - start_time) * 1000
 
         logger.info(
-            f"Batch query completed: {successful} successful, {failed} failed in {total_time_ms:.2f}ms"
+            f"Batch query completed: {successful} successful, {failed} failed in {total_time_ms:.2f}ms"  # noqa: E501
         )
 
         return BatchResponse(

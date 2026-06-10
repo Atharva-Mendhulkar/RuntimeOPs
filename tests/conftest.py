@@ -8,7 +8,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from typing import Any, AsyncGenerator, Dict, List
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -130,7 +130,7 @@ async def test_db(postgres_container, test_config):
     from psycopg.rows import dict_row
 
     config = test_config["postgres"]
-    conn_string = f"postgresql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
+    conn_string = f"postgresql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"  # noqa: E501
 
     async with await psycopg.AsyncConnection.connect(conn_string, row_factory=dict_row) as conn:
         # Create test tables
@@ -278,10 +278,10 @@ def process_data(data):
                 "path": "src/auth.py",
                 "content": """class AuthMiddleware:
     '''Authentication middleware'''
-    
+
     def __init__(self, secret_key):
         self.secret_key = secret_key
-    
+
     def authenticate(self, token):
         '''Authenticate user'''
         # Verify token
@@ -307,7 +307,7 @@ def large_repository() -> Dict[str, Any]:
 
 class Class_{i}:
     '''Class {i}'''
-    
+
     def method_{i}(self):
         '''Method {i}'''
         return {i}

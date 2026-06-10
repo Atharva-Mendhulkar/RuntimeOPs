@@ -131,7 +131,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
             return response
 
-        except Exception as e:
+        except Exception:
             # Track error
             duration = time.time() - start_time
             self.perf_monitor.track_http_request(

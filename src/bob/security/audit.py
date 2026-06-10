@@ -107,8 +107,8 @@ class AuditLogger:
         # Insert audit log entry
         cursor.execute(
             """
-            INSERT INTO audit_logs 
-            (event_type, user_id, resource, action, result, metadata, 
+            INSERT INTO audit_logs
+            (event_type, user_id, resource, action, result, metadata,
              ip_address, user_agent, request_id, timestamp)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING log_id
@@ -476,7 +476,7 @@ class AuditLogger:
         cursor.execute(
             """
             SELECT COUNT(*) FROM audit_logs
-            WHERE user_id = %s 
+            WHERE user_id = %s
             AND event_type = %s
             AND timestamp >= %s
             """,
@@ -490,7 +490,7 @@ class AuditLogger:
             """
             SELECT resource, COUNT(*) as count
             FROM audit_logs
-            WHERE user_id = %s 
+            WHERE user_id = %s
             AND event_type IN (%s, %s, %s)
             AND timestamp >= %s
             GROUP BY resource

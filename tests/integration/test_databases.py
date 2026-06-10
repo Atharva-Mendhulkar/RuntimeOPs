@@ -9,8 +9,6 @@ from uuid import uuid4
 
 import pytest
 
-from bob.config import get_settings
-from bob.graph.models import FileNode, RepositoryNode, SymbolNode
 from bob.graph.query import GraphQuery
 from bob.graph.writer import GraphWriter
 from bob.semantic.embedder import CodeChunk, Embedding
@@ -363,7 +361,7 @@ class TestPostgreSQLIntegration:
         # Cleanup
         try:
             registry.delete_repository(repo_id)
-        except:
+        except Exception:
             pass
 
     def test_create_and_get_repository(self, registry):

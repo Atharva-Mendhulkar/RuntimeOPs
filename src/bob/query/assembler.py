@@ -10,8 +10,6 @@ from uuid import UUID
 
 from bob.config import get_settings
 from bob.graph.query import GraphQuery
-from bob.semantic.embedder import Embedder
-from bob.semantic.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 

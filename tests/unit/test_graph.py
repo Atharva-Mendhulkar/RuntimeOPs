@@ -4,8 +4,8 @@ Tests for Neo4j graph models, writer, and query layer
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
 import pytest
 
@@ -18,7 +18,7 @@ from bob.graph.models import (
     ServiceNode,
     SymbolNode,
 )
-from bob.graph.query import BlastRadiusResult, CallChain, DependencyPath, ServiceTopology
+from bob.graph.query import BlastRadiusResult, ServiceTopology
 from bob.graph.writer import GraphWriter
 
 

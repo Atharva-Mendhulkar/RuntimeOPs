@@ -5,7 +5,7 @@ Multi-tier rate limiting with Redis-backed sliding window
 
 import time
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from redis import Redis
 

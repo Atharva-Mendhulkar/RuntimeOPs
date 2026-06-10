@@ -3,7 +3,6 @@ IBM Bob - Unit Tests for API Layer
 Tests for API models, gateway, router, and assembler
 """
 
-from datetime import datetime
 from uuid import uuid4
 
 import pytest
@@ -11,12 +10,8 @@ import pytest
 from bob.api.models import (
     BatchRequest,
     BlastRadiusRequest,
-    CommitDiffRequest,
     DependencyGraphRequest,
-    FileRequest,
     SearchRequest,
-    SearchResponse,
-    SearchResult,
     StackTraceRequest,
     SubQuery,
 )

@@ -3,19 +3,12 @@ IBM Bob - Integration Tests for API Endpoints
 Tests for all 8 REST endpoints with mocked backends
 """
 
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
-from bob.api.models import (
-    BatchRequest,
-    BlastRadiusRequest,
-    SearchRequest,
-    StackTraceRequest,
-    SubQuery,
-)
 from bob.main import app
 
 # Create test client
@@ -229,7 +222,7 @@ class TestDependencyGraphEndpoint:
 
         # Make request
         response = client.get(
-            f"/api/v1/bob/dependency-graph?repo_id={mock_repo_id}&file_path=src/app.py&hops=3&direction=both",
+            f"/api/v1/bob/dependency-graph?repo_id={mock_repo_id}&file_path=src/app.py&hops=3&direction=both",  # noqa: E501
             headers={"Authorization": mock_auth_token},
         )
 

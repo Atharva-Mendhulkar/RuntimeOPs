@@ -4,7 +4,6 @@ Tests for authentication, authorization, injection attacks, and security vulnera
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict
 
 import jwt
 import pytest

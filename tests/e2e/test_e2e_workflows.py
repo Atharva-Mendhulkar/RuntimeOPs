@@ -4,8 +4,7 @@ Tests complete workflows from ingestion to query
 """
 
 import asyncio
-from typing import Any, Dict
-from uuid import uuid4
+from typing import Dict
 
 import pytest
 
@@ -509,7 +508,7 @@ class TestSemanticSearchWorkflow:
             )
             assert (
                 found
-            ), f"Expected {test_case['expected_symbol']} in {test_case['expected_file']} not found for query: {test_case['query']}"
+            ), f"Expected {test_case['expected_symbol']} in {test_case['expected_file']} not found for query: {test_case['query']}"  # noqa: E501
 
     async def test_semantic_search_with_filters(
         self,

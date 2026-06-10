@@ -5,7 +5,7 @@ Performance tracking and profiling utilities for monitoring operation durations
 
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from bob.observability.logging import get_logger
 from bob.observability.metrics import get_metrics_manager

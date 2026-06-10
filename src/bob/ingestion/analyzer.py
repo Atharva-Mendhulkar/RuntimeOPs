@@ -535,7 +535,7 @@ class StructuralAnalyzer:
         try:
             betweenness = nx.betweenness_centrality(self.dependency_graph)
             betweenness_score = betweenness.get(file_path, 0.0)
-        except:
+        except Exception:
             betweenness_score = 0.0
 
         # Normalize and combine scores

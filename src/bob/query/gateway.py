@@ -5,7 +5,7 @@ Handles authentication, rate limiting, and request logging for all queries
 
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -170,10 +170,10 @@ class QueryGateway:
 
             if burst_count > self._rate_limit_burst:
                 logger.warning(
-                    f"Burst rate limit exceeded for agent {agent_id}: {burst_count}/{self._rate_limit_burst}"
+                    f"Burst rate limit exceeded for agent {agent_id}: {burst_count}/{self._rate_limit_burst}"  # noqa: E501
                 )
                 raise RateLimitExceededError(
-                    f"Burst rate limit exceeded: {burst_count}/{self._rate_limit_burst} requests in {self._burst_window_seconds}s",
+                    f"Burst rate limit exceeded: {burst_count}/{self._rate_limit_burst} requests in {self._burst_window_seconds}s",  # noqa: E501
                     details={
                         "agent_id": agent_id,
                         "limit": self._rate_limit_burst,
@@ -189,10 +189,10 @@ class QueryGateway:
 
             if minute_count > self._rate_limit_per_minute:
                 logger.warning(
-                    f"Rate limit exceeded for agent {agent_id}: {minute_count}/{self._rate_limit_per_minute}"
+                    f"Rate limit exceeded for agent {agent_id}: {minute_count}/{self._rate_limit_per_minute}"  # noqa: E501
                 )
                 raise RateLimitExceededError(
-                    f"Rate limit exceeded: {minute_count}/{self._rate_limit_per_minute} requests per minute",
+                    f"Rate limit exceeded: {minute_count}/{self._rate_limit_per_minute} requests per minute",  # noqa: E501
                     details={
                         "agent_id": agent_id,
                         "limit": self._rate_limit_per_minute,
@@ -202,7 +202,7 @@ class QueryGateway:
                 )
 
             logger.debug(
-                f"Rate limit check passed for {agent_id}: minute={minute_count}/{self._rate_limit_per_minute}, "
+                f"Rate limit check passed for {agent_id}: minute={minute_count}/{self._rate_limit_per_minute}, "  # noqa: E501
                 f"burst={burst_count}/{self._rate_limit_burst}"
             )
 

@@ -7,7 +7,6 @@ import json
 import logging
 import random
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 try:
@@ -253,7 +252,7 @@ Respond with ONLY the JSON object, no additional text."""
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a code analysis expert. Extract coding conventions from code samples and return structured JSON.",
+                        "content": "You are a code analysis expert. Extract coding conventions from code samples and return structured JSON.",  # noqa: E501
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -380,7 +379,6 @@ Respond with ONLY the JSON object, no additional text."""
         for result in parse_results[:5]:
             if result.imports:
                 # Check for standard library vs third-party grouping
-                has_blank_lines = False  # Would need actual source to detect
                 patterns.append("Imports grouped by type")
                 break
 

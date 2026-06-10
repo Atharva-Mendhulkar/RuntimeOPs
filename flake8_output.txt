@@ -1,0 +1,50 @@
+src/bob/api/models.py:90:101: E501 line too long (109 > 100 characters)
+src/bob/api/rest.py:217:101: E501 line too long (108 > 100 characters)
+src/bob/api/rest.py:357:101: E501 line too long (106 > 100 characters)
+src/bob/api/rest.py:627:34: F841 local variable 'graph_query' is assigned to but never used
+src/bob/api/rest.py:756:101: E501 line too long (103 > 100 characters)
+src/bob/config.py:128:101: E501 line too long (104 > 100 characters)
+src/bob/graph/writer.py:181:28: E203 whitespace before ':'
+src/bob/graph/writer.py:194:26: E203 whitespace before ':'
+src/bob/graph/writer.py:207:26: E203 whitespace before ':'
+src/bob/graph/writer.py:381:45: E203 whitespace before ':'
+src/bob/graph/writer.py:532:33: E203 whitespace before ':'
+src/bob/ingestion/analyzer.py:538:9: E722 do not use bare 'except'
+src/bob/ingestion/convention_extractor.py:255:101: E501 line too long (142 > 100 characters)
+src/bob/ingestion/convention_extractor.py:382:17: F841 local variable 'has_blank_lines' is assigned to but never used
+src/bob/main.py:64:13: F841 local variable 'metrics_manager' is assigned to but never used
+src/bob/main.py:298:1: E402 module level import not at top of file
+src/bob/parsers/base.py:328:43: E203 whitespace before ':'
+src/bob/parsers/java_parser.py:431:13: F841 local variable 'is_static' is assigned to but never used
+src/bob/query/gateway.py:173:101: E501 line too long (109 > 100 characters)
+src/bob/query/gateway.py:176:101: E501 line too long (131 > 100 characters)
+src/bob/query/gateway.py:192:101: E501 line too long (109 > 100 characters)
+src/bob/query/gateway.py:195:101: E501 line too long (109 > 100 characters)
+src/bob/query/gateway.py:205:101: E501 line too long (112 > 100 characters)
+src/bob/security/audit.py:110:35: W291 trailing whitespace
+src/bob/security/audit.py:111:70: W291 trailing whitespace
+src/bob/security/audit.py:479:31: W291 trailing whitespace
+src/bob/security/audit.py:493:31: W291 trailing whitespace
+src/bob/security/auth.py:286:55: E203 whitespace before ':'
+src/bob/security/auth.py:289:55: E203 whitespace before ':'
+src/bob/security/auth.py:354:66: W291 trailing whitespace
+src/bob/security/auth.py:443:33: W291 trailing whitespace
+src/bob/security/auth.py:444:72: W291 trailing whitespace
+src/bob/semantic/embedder.py:313:29: E203 whitespace before ':'
+src/bob/semantic/embedder.py:344:101: E501 line too long (115 > 100 characters)
+src/bob/semantic/embedder.py:380:29: E203 whitespace before ':'
+src/bob/semantic/vector_store.py:224:101: E501 line too long (127 > 100 characters)
+src/bob/tools/langgraph_integration.py:50:101: E501 line too long (107 > 100 characters)
+src/bob/tools/langgraph_integration.py:121:101: E501 line too long (105 > 100 characters)
+tests/chaos/test_resilience.py:323:9: F841 local variable 'failed' is assigned to but never used
+tests/conftest.py:133:101: E501 line too long (126 > 100 characters)
+tests/conftest.py:281:1: W293 blank line contains whitespace
+tests/conftest.py:284:1: W293 blank line contains whitespace
+tests/conftest.py:310:1: W293 blank line contains whitespace
+tests/integration/test_observability_integration.py:76:18: F841 local variable 'span' is assigned to but never used
+tests/integration/test_observability_integration.py:301:71: F841 local variable 'span' is assigned to but never used
+tests/load/locustfile.py:361:1: E402 module level import not at top of file
+tests/unit/test_observability.py:57:82: F841 local variable 'span' is assigned to but never used
+tests/unit/test_parsers.py:67:1: W293 blank line contains whitespace
+tests/unit/test_parsers.py:70:1: W293 blank line contains whitespace
+tests/unit/test_parsers.py:74:1: W293 blank line contains whitespace

@@ -5,8 +5,8 @@ Tests for query performance, ingestion throughput, and system scalability
 
 import asyncio
 import time
-from statistics import mean, median, stdev
-from typing import Any, Dict, List
+from statistics import mean, median
+from typing import Any, Dict
 
 import pytest
 
@@ -78,7 +78,7 @@ class TestQueryPerformance:
         p95_latency = sorted(latencies)[int(len(latencies) * 0.95)]
         p99_latency = sorted(latencies)[int(len(latencies) * 0.99)]
 
-        print(f"\nSemantic Search Performance:")
+        print("\nSemantic Search Performance:")
         print(f"  Average: {avg_latency:.3f}s")
         print(f"  Median: {median_latency:.3f}s")
         print(f"  P95: {p95_latency:.3f}s")
@@ -189,7 +189,7 @@ class TestQueryPerformance:
         cache_hit_latency = time.time() - start
         assert response.status_code == 200
 
-        print(f"\nFile Retrieval Performance:")
+        print("\nFile Retrieval Performance:")
         print(f"  Cache Miss: {cache_miss_latency:.3f}s")
         print(f"  Cache Hit: {cache_hit_latency:.3f}s")
         print(f"  Speedup: {cache_miss_latency / cache_hit_latency:.1f}x")
@@ -307,8 +307,8 @@ class TestIngestionPerformance:
 
         duration = time.time() - start
 
-        print(f"\nIncremental Update Performance:")
-        print(f"  Changed Files: 10")
+        print("\nIncremental Update Performance:")
+        print("  Changed Files: 10")
         print(f"  Duration: {duration:.1f}s")
 
         # Incremental update should be much faster than full reindex
@@ -411,7 +411,7 @@ class TestConcurrentPerformance:
         p95_latency = sorted(latencies)[int(len(latencies) * 0.95)]
         throughput = num_requests / total_duration
 
-        print(f"\nConcurrent Search Performance:")
+        print("\nConcurrent Search Performance:")
         print(f"  Requests: {num_requests}")
         print(f"  Success Rate: {success_rate:.1%}")
         print(f"  Total Duration: {total_duration:.1f}s")
@@ -485,7 +485,7 @@ class TestConcurrentPerformance:
         success_rate = success_count / len(tasks)
         throughput = len(tasks) / duration
 
-        print(f"\nMixed Workload Performance:")
+        print("\nMixed Workload Performance:")
         print(f"  Total Requests: {len(tasks)}")
         print(f"  Success Rate: {success_rate:.1%}")
         print(f"  Duration: {duration:.1f}s")

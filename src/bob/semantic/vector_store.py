@@ -221,7 +221,7 @@ class VectorStore:
         with collection.batch.dynamic() as batch:
             for embedding in embeddings:
                 # Create unique ID based on repo, file, symbol, and line
-                object_id = f"{repo_id}:{embedding.chunk.file_path}:{embedding.chunk.symbol_name}:{embedding.chunk.start_line}"
+                object_id = f"{repo_id}:{embedding.chunk.file_path}:{embedding.chunk.symbol_name}:{embedding.chunk.start_line}"  # noqa: E501
 
                 properties = {
                     "repo_id": str(repo_id),

@@ -7,20 +7,15 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from neo4j import GraphDatabase, Session
+from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
 
 from bob.config import get_settings
-from bob.exceptions import GraphConnectionError, GraphError
+from bob.exceptions import GraphConnectionError
 from bob.graph.models import (
-    BelongsToRelationship,
     CallsRelationship,
-    CommitNode,
-    ContainsRelationship,
-    DefinesRelationship,
     FileNode,
     ImportsRelationship,
-    ModifiedRelationship,
     RepositoryNode,
     ServiceNode,
     SymbolNode,
@@ -183,7 +178,7 @@ class GraphWriter:
 
         # Batch write files
         file_batches = [
-            parse_results[i : i + batch_size] for i in range(0, len(parse_results), batch_size)
+            parse_results[i : i + batch_size] for i in range(0, len(parse_results), batch_size)  # noqa: E203  # noqa: E501
         ]
 
         for batch in file_batches:
@@ -196,7 +191,7 @@ class GraphWriter:
                 all_symbols.append((result, symbol))
 
         symbol_batches = [
-            all_symbols[i : i + batch_size] for i in range(0, len(all_symbols), batch_size)
+            all_symbols[i : i + batch_size] for i in range(0, len(all_symbols), batch_size)  # noqa: E203  # noqa: E501
         ]
 
         for batch in symbol_batches:
@@ -209,7 +204,7 @@ class GraphWriter:
                 all_imports.append((result, import_stmt))
 
         import_batches = [
-            all_imports[i : i + batch_size] for i in range(0, len(all_imports), batch_size)
+            all_imports[i : i + batch_size] for i in range(0, len(all_imports), batch_size)  # noqa: E203  # noqa: E501
         ]
 
         for batch in import_batches:
@@ -383,7 +378,7 @@ class GraphWriter:
 
         with self._driver.session() as session:
             for i in range(0, len(files_with_symbols), batch_size):
-                batch = files_with_symbols[i : i + batch_size]
+                batch = files_with_symbols[i : i + batch_size]  # noqa: E203
                 rel_result = session.run(
                     query,
                     repo_id=str(repo_id),
@@ -534,7 +529,7 @@ class GraphWriter:
         total_count = 0
 
         for i in range(0, len(calls_data), batch_size):
-            batch = calls_data[i : i + batch_size]
+            batch = calls_data[i : i + batch_size]  # noqa: E203
             with self._driver.session() as session:
                 result = session.run(query, calls=batch)
                 total_count += result.single()["count"]

@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import git
-from cryptography.hazmat.primitives import serialization
 from github import Auth, Github, GithubIntegration
 
 from bob.config import get_settings

@@ -3,7 +3,6 @@ IBM Bob - Main Application Entry Point
 FastAPI application with health check endpoint
 """
 
-import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -62,7 +61,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Initialize metrics
         if settings.enable_metrics:
-            metrics_manager = get_metrics_manager()
+            get_metrics_manager()
             logger.info("metrics_initialized")
             print("✅ Metrics initialized")
 
@@ -296,7 +295,7 @@ async def liveness_check_legacy() -> JSONResponse:
 # Include API Routers
 # ============================================================================
 
-from bob.api.rest import router as api_router
+from bob.api.rest import router as api_router  # noqa: E402
 
 app.include_router(
     api_router,
@@ -304,7 +303,7 @@ app.include_router(
     tags=["bob"],
 )
 
-print(f"✅ API router registered at /api/v1/bob")
+print("✅ API router registered at /api/v1/bob")
 
 
 if __name__ == "__main__":

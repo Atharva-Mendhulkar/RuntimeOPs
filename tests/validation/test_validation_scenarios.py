@@ -188,7 +188,7 @@ class TestValidationScenarios:
 
         # Step 2: Get Dependency Graph
         response_dep = client.get(
-            f"/api/v1/bob/dependency-graph?repo_id={repo_uuid}&file_path=src/db/redis_client.py&hops=2&direction=both",
+            f"/api/v1/bob/dependency-graph?repo_id={repo_uuid}&file_path=src/db/redis_client.py&hops=2&direction=both",  # noqa: E501
             headers={"Authorization": mock_auth_token},
         )
         assert response_dep.status_code == 200
@@ -279,7 +279,7 @@ class TestValidationScenarios:
         }
 
         response = client.get(
-            f"/api/v1/bob/dependency-graph?repo_id={repo_uuid}&file_path=src/utils/shared_helpers.py&hops=1&direction=downstream",
+            f"/api/v1/bob/dependency-graph?repo_id={repo_uuid}&file_path=src/utils/shared_helpers.py&hops=1&direction=downstream",  # noqa: E501
             headers={"Authorization": mock_auth_token},
         )
         assert response.status_code == 200
@@ -307,7 +307,7 @@ class TestValidationScenarios:
         }
 
         response = client.get(
-            f"/api/v1/bob/dependency-graph?repo_id={repo_uuid}&file_path=services/service_a/worker.py&hops=1&direction=upstream",
+            f"/api/v1/bob/dependency-graph?repo_id={repo_uuid}&file_path=services/service_a/worker.py&hops=1&direction=upstream",  # noqa: E501
             headers={"Authorization": mock_auth_token},
         )
         assert response.status_code == 200

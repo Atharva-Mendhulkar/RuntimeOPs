@@ -310,7 +310,7 @@ class SemanticEmbedder:
         batch_size = 100  # OpenAI allows up to 2048 inputs per request
 
         for i in range(0, len(chunks), batch_size):
-            batch = chunks[i : i + batch_size]
+            batch = chunks[i : i + batch_size]  # noqa: E203
             texts = [chunk.content for chunk in batch]
 
             # Retry with exponential backoff
@@ -341,7 +341,7 @@ class SemanticEmbedder:
                         # Exponential backoff
                         delay = self._rate_limit_delay * (2**attempt)
                         logger.warning(
-                            f"Rate limit hit, retrying in {delay:.2f}s (attempt {attempt + 1}/{self._max_retries})"
+                            f"Rate limit hit, retrying in {delay:.2f}s (attempt {attempt + 1}/{self._max_retries})"  # noqa: E501
                         )
                         time.sleep(delay)
                     else:
@@ -377,7 +377,7 @@ class SemanticEmbedder:
         batch_size = 32
 
         for i in range(0, len(chunks), batch_size):
-            batch = chunks[i : i + batch_size]
+            batch = chunks[i : i + batch_size]  # noqa: E203
             texts = [chunk.content for chunk in batch]
 
             try:

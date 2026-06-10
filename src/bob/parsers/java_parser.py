@@ -428,7 +428,6 @@ class JavaParser(LanguageParser):
             import_text = self._get_node_text(node, source_code)
 
             # Check for static import
-            is_static = "static" in import_text
 
             # Check for wildcard import
             is_wildcard = "*" in import_text

@@ -325,7 +325,7 @@ class LanguageParser(ABC):
         Returns:
             Node text as string
         """
-        return source_code[node.start_byte : node.end_byte].decode("utf-8")
+        return source_code[node.start_byte : node.end_byte].decode("utf-8")  # noqa: E203
 
     def _get_node_line_range(self, node: Any) -> tuple[int, int]:
         """

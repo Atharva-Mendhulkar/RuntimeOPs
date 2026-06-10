@@ -2,7 +2,7 @@
 Unit tests for Bob tools
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest

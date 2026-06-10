@@ -9,10 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
 
 from bob.config import get_settings
-from bob.exceptions import IndexingError, IndexingTimeoutError
 from bob.ingestion.analyzer import AnalysisResult, StructuralAnalyzer
 from bob.ingestion.convention_extractor import CodingConvention, ConventionExtractor
 from bob.ingestion.fetcher import RepositoryFetcher, RepositoryMetadata
